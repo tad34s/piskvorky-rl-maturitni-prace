@@ -6,7 +6,7 @@ from CNNPlayer import CNNPLayer
 from mmplayer import MinimaxPlayer
 from combinationplayer import CombPlayer
 from utils import displaystats
-from chatgptmmplayer import MinimaxPlayer2
+
 
 
 # Press Shift+F10 to execute it or replace it with your code.
@@ -16,13 +16,12 @@ from chatgptmmplayer import MinimaxPlayer2
 def main():
     piskvorky = Piskvorky(velikost)
     #cnn = CNNPLayer(velikost, name="CNN 2", load="CNN 2")
-    #comb = CombPlayer(size=velikost, depth=3,name="1", model=None, load="CNN 5")
-    minim2 = MinimaxPlayer2(4, name="B84a")
-    minim = MinimaxPlayer(3, name="dreslerova")
-    #user = UserPlayer()
+    comb = CombPlayer(size=velikost, depth=3,name="1", model=None, load="CNN 5")
+    minim = MinimaxPlayer(3, name="Minimax 1")
+    user = UserPlayer()
 
     #play(piskvorky,player1,player2)
-    test(piskvorky,10,minim2,minim)
+    test(piskvorky,10,comb,minim)
 
 def play(game, player1, player2):
     game.reset()

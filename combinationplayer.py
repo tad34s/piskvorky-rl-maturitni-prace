@@ -90,7 +90,7 @@ class CombPlayer():
         # Add the board and its value to the cache
         return best_value, best_move
 
-    def move(self, game):
+    def move(self, game,enemy_move):
         value, xy = self.minimax(game, deepcopy(self.depth), float("-inf"), float("inf"), True, mov=None)
         print(value,xy)
         game.move(xy)

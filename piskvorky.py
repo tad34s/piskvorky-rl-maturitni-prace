@@ -167,8 +167,7 @@ class Piskvorky():
 
     def hash(self):
         """
-        Encode the current state of the game (board positions) as an integer. Will be used for caching evaluations
-        : A collision free hash value representing the current board state
+
         """
         res = 0
         for y, row in enumerate(self.state):
