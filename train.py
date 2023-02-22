@@ -16,14 +16,15 @@ def main():
     minimax1 = MinimaxPlayer(depth=3, name="1")
     comb = CombPlayer(size=velikost, depth=3, name="1", model=None, load="CNN 6")
     # CNNQplayer = CNNQPlayer(velikost)
-    game_record = train(piskvorky, cnnp1, minimax1)
+    game_record,games_len = train(piskvorky, cnnp1, minimax1)
     cnnp1.save_model()
-    displaystats(game_record, cnnp1.name, minimax1.name)
+    displaystats(game_record, games_len, cnnp1.name, minimax1.name)
 
 
 def train(game, player1, player2):
     number_of_games = 100
     games_won = []
+    games_len =[]
 
     for i in range(1, number_of_games + 1):
         print(i)
@@ -35,11 +36,13 @@ def train(game, player1, player2):
         player1.newgame(side=game.X, other=game.O)
         player2.newgame(side=game.O, other=game.X)
         vysledek = 0
+        n_of_moves = 0
         move = None
 
         while True:
             move = turn.move(game,move)
             print(str(game))
+            n_of_moves += 1
             if game.end(move):
                 vysledek = game.end(move)
                 break
@@ -49,6 +52,8 @@ def train(game, player1, player2):
             player1.train(vysledek,epochs = 20, reps = 20)
         if player2.to_train:
             player2.train(vysledek, epochs = 20, reps = 20)
+
+        games_len.append(n_of_moves)
 
         if vysledek == 1:
             games_won.append(starter)
@@ -60,7 +65,7 @@ def train(game, player1, player2):
         player1, player2 = player2, player1
 
 
-    return games_won
+    return games_won,games_len
 
 if __name__ == '__main__':
     main()

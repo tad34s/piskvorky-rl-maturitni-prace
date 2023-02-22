@@ -62,7 +62,7 @@ def test(game, length, player1, player2):
     for i in range(length):
         log.append(play(game, player1, player2))
         player1,player2 = player2, player1
-    displaystats(log,player1.name,player2.name)
+    displaystats(log, player1.name, player2.name)
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
