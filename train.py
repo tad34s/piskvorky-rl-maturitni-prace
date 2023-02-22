@@ -10,15 +10,15 @@ from utils import displaystats
 
 def main():
     piskvorky = Piskvorky(velikost)
-    cnnp1 = CNNPLayer(velikost, name="1", to_train=True)
+    cnnp1 = CNNPLayer(velikost, name="4", to_train=True)
     cnnp2 = CNNPLayer(velikost,name="2",to_train = True)
     minimax2 = MinimaxPlayer(depth=6, name="2")
     minimax1 = MinimaxPlayer(depth=3, name="1")
     comb = CombPlayer(size=velikost, depth=3, name="1", model=None, load="CNN 6")
     # CNNQplayer = CNNQPlayer(velikost)
-    game_record = train(piskvorky, cnnp1, cnnp2)
+    game_record = train(piskvorky, cnnp1, minimax1)
     cnnp1.save_model()
-    displaystats(game_record, cnnp1.name, cnnp2.name)
+    displaystats(game_record, cnnp1.name, minimax1.name)
 
 
 def train(game, player1, player2):
@@ -46,9 +46,9 @@ def train(game, player1, player2):
             turn,waiting = waiting,turn
 
         if player1.to_train:
-            player1.train(vysledek,epochs = 100)
+            player1.train(vysledek,epochs = 20, reps = 20)
         if player2.to_train:
-            player2.train(vysledek, epochs = 100)
+            player2.train(vysledek, epochs = 20, reps = 20)
 
         if vysledek == 1:
             games_won.append(starter)

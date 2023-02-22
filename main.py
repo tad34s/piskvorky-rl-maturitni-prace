@@ -15,22 +15,28 @@ from utils import displaystats
 
 def main():
     piskvorky = Piskvorky(velikost)
-    #cnn = CNNPLayer(velikost, name="CNN 2", load="CNN 2")
-    comb = CombPlayer(size=velikost, depth=3,name="1", model=None, load="CNN 5")
+    cnn2 = CNNPLayer(velikost, name="CNN 2", load="CNN 7 8")
+    cnn = CNNPLayer(velikost, name = "CNN 1", load = "CNN 3 8")
+    #comb = CombPlayer(size=velikost, depth=3,name="1", model=None, load="CNN 5")
     minim = MinimaxPlayer(3, name="Minimax 1")
-    user = UserPlayer()
+    #user = UserPlayer()
 
     #play(piskvorky,player1,player2)
-    test(piskvorky,10,comb,minim)
+    test(piskvorky,10,cnn,cnn2)
 
 def play(game, player1, player2):
     game.reset()
-    player1.newgame(game.X, game.O)
-    player2.newgame(game.O, game.X)
+    starter = player1.name
+    seconder = player2.name
     turn = player1
     waiting = player2
+    player1.newgame(side=game.X, other=game.O)
+    player2.newgame(side=game.O, other=game.X)
+    vysledek = 0
+    move = None
+
     while True:
-        move = turn.move(game)
+        move = turn.move(game, move)
         print(str(game))
         if game.end(move):
             vysledek = game.end(move)

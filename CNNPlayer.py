@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
+from mmplayer import minimax
+
+from torch import Tensor
 
 
 class CNNetwork(torch.nn.Module):
@@ -150,7 +153,7 @@ class CNNPLayer():
 
         return odmena
 
-    def train(self, vysledek, epochs):
+    def train(self, vysledek, epochs, reps = 1):
         if vysledek == self.side:
             reward = self.win_value
         elif vysledek == "0":
@@ -158,95 +161,57 @@ class CNNPLayer():
         else:
             reward = self.loss_value
 
+
+
         self.next_max_log.append(reward)
         self.reward_log[-1] = 0 # the last reward is accounted for above
 
-        y = self.calculate_targets()
+        for rep in range(0,reps):
+            if reps != 0:
+                self.retry_values(reward)
 
-        # We convert the input states we have recorded to feature vectors to feed into the training.
+            y = self.calculate_targets()
 
-        X = torch.tensor([])
-        for x in self.board_state_log:
-            X = torch.cat([X, self.encode(x)])
-        # X = torch.empty(size=(len(self.board_state_log),3,5,5))
-        # for e, board in enumerate(self.board_state_log):
+            # We convert the input states we have recorded to feature vectors to feed into the training.
 
-        # X[e] = self.encode(board)
+            X = torch.tensor([])
+            for x in self.board_state_log:
+                X = torch.cat([X, self.encode(x)])
+            # X = torch.empty(size=(len(self.board_state_log),3,5,5))
+            # for e, board in enumerate(self.board_state_log):
 
-        for epoch in range(epochs):
-            # We run the training step with the recorded inputs and new Q value targets.
-            y_hat = self.model(X)
-            # y = y.view(-1, 1)
+            # X[e] = self.encode(board)
 
-            loss = self.loss_fn(y_hat, y)
+            for epoch in range(epochs):
+                # We run the training step with the recorded inputs and new Q value targets.
+                y_hat = self.model(X)
+                # y = y.view(-1, 1)
 
-            # Backprop
-            self.optim.zero_grad()
-            loss.backward()
-            self.optim.step()
+                loss = self.loss_fn(y_hat, y)
+
+                # Backprop
+                self.optim.zero_grad()
+                loss.backward()
+                self.optim.step()
 
         self.random_move_prob *= self.random_move_decrease
 
     def minimax_move(self,game):
+        move = minimax(game,3)
+        return move
 
-        def minimax(board, depth, alpha, beta, maximizing_player, mov):
+    def retry_values(self,reward):
+        print("retry values")
+        self.values_log = []
+        self.next_max_log = []
+        for e,state in enumerate(self.board_state_log):
+            input = self.encode(state)
+            probs, q_values = self.model.probs(input)
+            q_values = np.copy(q_values)
+            self.values_log.append(q_values)
+            if e != 0:
+                self.next_max_log.append(q_values[self.move_log[e]])
+        self.next_max_log.append(reward)
 
-            if depth == 0:
-                encodeboard = self.encode(board.state)
-                probs, q_values = self.model.probs(encodeboard)
-                value = np.amax(q_values.numpy())
-                if maximizing_player:
-                    value = value * -1
-                return value, None
-
-            # Base case: if the depth is 0 or the board is a terminal state, return the value of the board
-            if mov is not None:
-                vysledek = board.end(mov)
-                if depth == 0 or vysledek:
-                    value = 1
-                    if maximizing_player:
-                        value = value * -1
-                    if vysledek == "0":
-                        value = 0
-                    return value, None
-
-            # Initialize the best value to a large negative number for the maximizing player and a large positive number for the minimizing player
-            if maximizing_player:
-                best_value = float("-inf")
-                best_move = None
-            else:
-                best_value = float("inf")
-                best_move = None
-
-            for move in board.listofpossiblemoves():
-
-                board.move(move)
-                value, _ = minimax(board, depth - 1, alpha, beta, not maximizing_player, move)
-                board.insertempty(move)
-                if maximizing_player:
-                    # Choose the maximum value
-                    if value > best_value:
-                        best_value = value
-                        best_move = move
-
-                    alpha = max(alpha, value)
-                else:
-                    # Choose the minimum value
-                    if value < best_value:
-                        best_value = value
-                        best_move = move
-
-                    beta = min(beta, value)
-
-                # Prune the search tree if possible
-                if alpha >= beta:
-                    break
-
-                # Add the board and its value to the cache
-            return best_value, best_move
-
-        value, xy = minimax(game, 3, float("-inf"), float("inf"), True, mov=None)
-
-        return xy
     def save_model(self):
         torch.save(self.model.state_dict(), self.name)
