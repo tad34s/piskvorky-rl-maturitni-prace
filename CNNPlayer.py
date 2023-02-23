@@ -63,7 +63,7 @@ class CNNPLayer():
         self.loss_value = -1.0
         # exploitation vs exploration
         self.random_move_prob = 0.5
-        self.random_move_decrease = 0.92
+        self.random_move_decrease = 0.90
         # logs
         self.board_state_log = []
         self.move_log = []
@@ -195,7 +195,6 @@ class CNNPLayer():
                 self.optim.step()
 
         self.random_move_prob *= self.random_move_decrease
-
     def minimax_move(self,game):
         move = minimax(game,3)
         return move

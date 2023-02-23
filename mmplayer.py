@@ -134,6 +134,10 @@ def minimax(game, depth):
         return minv, minx, miny
 
     val, x, y = maxx(-200, 200, 0, depth)
+
+    if val == 0:
+        return random.choice(listofpossiblemoves(game))
+
     return x, y
 
 
