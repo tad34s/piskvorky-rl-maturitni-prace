@@ -61,10 +61,10 @@ def train(game, player1, player2):
             seconder_reps = 3
             games_won.append(vysledek)
 
-        if starter.to_train:
-            starter.train(vysledek,epochs = 20, reps = starter_reps)
-        if seconder.to_train:
-            seconder.train(vysledek, epochs = 20, reps = seconder_reps)
+        if player1.to_train:
+            player1.train(vysledek,epochs = 20, reps = starter_reps)
+        if player2.to_train:
+            player2.train(vysledek, epochs = 20, reps = seconder_reps)
 
         games_len.append(n_of_moves)
 
