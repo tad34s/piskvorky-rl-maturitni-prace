@@ -13,7 +13,7 @@ def main():
     cnnp1 = CNNPLayer(velikost, name="4", to_train=True)
     cnnp2 = CNNPLayer(velikost,name="2",to_train = True)
     minimax2 = MinimaxPlayer(depth=6, name="2")
-    minimax1 = MinimaxPlayer(depth=2, name="1")
+    minimax1 = MinimaxPlayer(depth=1, name="1")
    # comb = CombPlayer(size=velikost, depth=3, name="1", model=None, load="CNN 6")
     # CNNQplayer = CNNQPlayer(velikost)
     game_record,games_len = train(piskvorky, cnnp1, minimax1)
@@ -61,10 +61,11 @@ def train(game, player1, player2):
             seconder_reps = 3
             games_won.append(vysledek)
 
+        multiplier = 0
         if player1.to_train:
-            player1.train(vysledek,epochs = 20, reps = starter_reps)
+            player1.train(vysledek,epochs = 20, reps = starter_reps * multiplier)
         if player2.to_train:
-            player2.train(vysledek, epochs = 20, reps = seconder_reps)
+            player2.train(vysledek, epochs = 20, reps = seconder_reps * multiplier)
 
         games_len.append(n_of_moves)
 
