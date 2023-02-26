@@ -10,19 +10,20 @@ from utils import displaystats
 
 def main():
     piskvorky = Piskvorky(velikost)
-    cnnp1 = CNNPLayer(velikost, name="4", to_train=True)
-    cnnp2 = CNNPLayer(velikost,name="2",to_train = True)
+    cnnp1 = CNNPLayer(velikost, name="5",load="CNN 5 8", to_train=True)
+    cnnp2 = CNNPLayer(velikost,name="6",load="CNN 6 8",to_train = True)
     minimax2 = MinimaxPlayer(depth=6, name="2")
     minimax1 = MinimaxPlayer(depth=1, name="1")
    # comb = CombPlayer(size=velikost, depth=3, name="1", model=None, load="CNN 6")
     # CNNQplayer = CNNQPlayer(velikost)
-    game_record,games_len = train(piskvorky, cnnp1, minimax1)
+    game_record,games_len = train(piskvorky, cnnp1, cnnp2)
     cnnp1.save_model()
-    displaystats(game_record, games_len, cnnp1.name, minimax1.name)
+    cnnp2.save_model()
+    displaystats(game_record, games_len, cnnp1.name, cnnp2.name)
 
 
 def train(game, player1, player2):
-    number_of_games = 800
+    number_of_games = 2000
     games_won = []
     games_len =[]
 

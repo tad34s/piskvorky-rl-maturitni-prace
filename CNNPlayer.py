@@ -12,24 +12,34 @@ class CNNetwork(torch.nn.Module):
     def __init__(self, size):
         self.size = size
         super(CNNetwork, self).__init__()
-        self.block1 = nn.Sequential(nn.Conv2d(3, 32, kernel_size=2, stride=1, padding=0),
+        self.block1 = nn.Sequential(nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
-                                    nn.BatchNorm2d(32),
-                                    nn.MaxPool2d(kernel_size=2, stride=2)
+                                    nn.BatchNorm2d(128),
+                                    )
+        self.block2 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+                                    nn.ReLU(),
+                                    nn.BatchNorm2d(128),
+                                    )
+        self.block3 = nn.Sequential(nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
+                                    nn.ReLU(),
+                                    nn.BatchNorm2d(64),
                                     )
 
-        self.linear1 = nn.Linear(32 * (math.ceil(self.size / 2) - 1) ** 2, 350)
-        self.linear2 = nn.Linear(350, 225)
-        self.linear3 = nn.Linear(225, self.size ** 2)
-        self.activation = nn.ReLU()
+        self.linear1 = nn.Linear(4096, 1024)
+        self.linear2 = nn.Linear(1024, 512)
+        self.linear3 = nn.Linear(512, self.size ** 2)
+        self.activation = nn.Tanh()
         self.softmax = nn.Softmax(-1)
 
     def forward(self, x):
         x = self.block1(x)
+        x = self.block2(x)
+        x = self.block3(x)
         x = x.flatten(start_dim=1)
         x = self.linear1(x)
         x = self.activation(x)
         x = self.linear2(x)
+        x = self.activation(x)
         q_values = self.linear3(x)
         return q_values
 
@@ -63,7 +73,7 @@ class CNNPLayer():
         self.loss_value = -1.0
         # exploitation vs exploration
         self.random_move_prob = 0.5
-        self.random_move_decrease = 0.90
+        self.random_move_decrease = 0.99
         # logs
         self.board_state_log = []
         self.move_log = []
@@ -161,6 +171,8 @@ class CNNPLayer():
         else:
             reward = self.loss_value
 
+        if reps<1:
+            reps = 1
 
 
         self.next_max_log.append(reward)
