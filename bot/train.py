@@ -3,19 +3,19 @@ from piskvorky import Piskvorky
 from mmplayer import MinimaxPlayer
 from CNNPlayer import CNNPLayer
 import matplotlib.pyplot as plt
-from utils import velikost
+from variables import VELIKOST
 from combinationplayer import CombPlayer
 from utils import displaystats
 
 
 def main():
-    piskvorky = Piskvorky(velikost)
-    cnnp1 = CNNPLayer(velikost, name="4",load= "CNN 4 8", to_train=True)
-    cnnp2 = CNNPLayer(velikost,name="5", load = "CNN 5 8",to_train = True)
+    piskvorky = Piskvorky(VELIKOST)
+    cnnp1 = CNNPLayer(VELIKOST, name="4",load= "CNN 4 8", to_train=True)
+    cnnp2 = CNNPLayer(VELIKOST,name="5", load = "CNN 5 8",to_train = True)
     minimax2 = MinimaxPlayer(depth=6, name="2")
     minimax1 = MinimaxPlayer(depth=1, name="1")
-   # comb = CombPlayer(size=velikost, depth=3, name="1", model=None, load="CNN 6")
-    # CNNQplayer = CNNQPlayer(velikost)
+   # comb = CombPlayer(size=VELIKOST, depth=3, name="1", model=None, load="CNN 6")
+    # CNNQplayer = CNNQPlayer(VELIKOST)
     game_record,games_len = train(piskvorky, cnnp1, cnnp2)
     cnnp1.save_model()
     cnnp2.save_model()
