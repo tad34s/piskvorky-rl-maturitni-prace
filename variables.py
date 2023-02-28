@@ -1,0 +1,1 @@
+VELIKOST = 8
