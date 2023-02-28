@@ -10,8 +10,8 @@ from utils import displaystats
 
 def main():
     piskvorky = Piskvorky(VELIKOST)
-    cnnp1 = CNNPLayer(VELIKOST, name="4",load= "CNN 4 8", to_train=True)
-    cnnp2 = CNNPLayer(VELIKOST,name="5", load = "CNN 5 8",to_train = True)
+    cnnp1 = CNNPLayer(VELIKOST, name="9",load= "CNN 9 8", to_train=True)
+    cnnp2 = CNNPLayer(VELIKOST,name="10", load = "CNN 10 8",to_train = True)
     minimax2 = MinimaxPlayer(depth=6, name="2")
     minimax1 = MinimaxPlayer(depth=1, name="1")
    # comb = CombPlayer(size=VELIKOST, depth=3, name="1", model=None, load="CNN 6")

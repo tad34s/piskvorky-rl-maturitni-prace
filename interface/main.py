@@ -27,8 +27,6 @@ def main():
     print(os.getcwd())
 
     game = Piskvorky(VELIKOST)
-    game.move((1, 1))
-    game.move((2, 2))
     game_ended = False
 
     turn_user = True
@@ -36,6 +34,7 @@ def main():
     AI.newgame(side=game.O, other=game.X)
     vysledek = 0
     while True:
+        drawBoard(game)
         if game_ended:
             if vysledek==1:
                 showMessage("Vyhrál jsi")
@@ -43,7 +42,10 @@ def main():
                 showMessage("Prohrál jsi")
             else:
                 showMessage("Remíza")
-            pass
+            game.reset()
+            AI.newgame(side=game.O, other=game.X)
+            turn_user = True
+
             # text s výsledkem, čára přes vyhranou věc, nejde dál psát
         else:
             drawBoard(game)
@@ -66,18 +68,15 @@ def main():
 
 
                 if not turn_user:
-                    sleep(5)
-                    move = AI.move(game,False)
-                    if move:
-                        game.move(move)
-                        if vysledek := game.end(move):
-                            game_ended = True
-                        turn_user = True
+                    move = AI.move(game, False)
+                    if vysledek := game.end(move):
+                        game_ended = True
+                    turn_user = True
 
             # nakreslit z boardu z game.board
             # poslouchat event lick, získat pozici, konvertovat na move, ceknout jestli je legalni a je na rade jestli ano udelat ho
 
-        pygame.display.update()
+            pygame.display.update()
 
 
 def drawGrid():

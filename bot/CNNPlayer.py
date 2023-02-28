@@ -95,8 +95,11 @@ class CNNPLayer():
         self.draw_value = 0.0
         self.loss_value = -1.0
         # exploitation vs exploration
+
         self.random_move_prob = 0.01
         self.random_move_decrease = 0.99999
+        if self.to_train:
+            self.random_move_prob = 0
         # logs
         self.board_state_log = []
         self.move_log = []
@@ -142,10 +145,12 @@ class CNNPLayer():
         return torch.tensor(targets)
 
     def move(self, game, enemy_move):
-        self.board_state_log.append(game.state.copy())
-        # calculate punishemnt
-        if self.reward_log:
-            self.reward_log[-1] -= self.reward(game, enemy_move)
+
+        if self.to_train:
+            self.board_state_log.append(game.state.copy())
+            # calculate punishemnt
+            if self.reward_log:
+                self.reward_log[-1] -= self.reward(game, enemy_move)
 
         input = self.encode(game.state)
         probs, q_values = self.model.probs(input)
@@ -153,6 +158,7 @@ class CNNPLayer():
         for index, value in enumerate(q_values):
             if not game.islegal(game.indextoxy(index)):
                 probs[index] = -1
+                print(game.indextoxy(index))
             elif probs[index] < 0:
                 probs[index] = 0.0
 
@@ -162,16 +168,19 @@ class CNNPLayer():
             move = np.argmax(probs.numpy())
             move = game.indextoxy(move)
 
-        if len(self.move_log) > 0:
-            self.next_max_log.append(q_values[np.argmax(probs.numpy())])
 
-        self.move_log.append(game.xytoindex(move))
-        self.values_log.append(q_values)
 
+
+        print(move)
         game.move(move)
 
         # add reward
-        self.reward_log.append(self.reward(game, move))
+        if self.to_train:
+            if len(self.move_log) > 0:
+                self.next_max_log.append(q_values[np.argmax(probs.numpy())])
+            self.move_log.append(game.xytoindex(move))
+            self.values_log.append(q_values)
+            self.reward_log.append(self.reward(game, move))
 
         return move
 

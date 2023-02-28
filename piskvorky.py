@@ -76,7 +76,7 @@ class Piskvorky():
             print("Out of columns")
             return False
         if self.state[y, x] != self.EMPTY:
-            print(y, x)
+            print(f"occupied by {self.state[y, x]}")
             return False
 
         return True
