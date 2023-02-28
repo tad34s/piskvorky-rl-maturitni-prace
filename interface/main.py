@@ -2,6 +2,10 @@ import pygame
 import sys
 from variables import VELIKOST
 from piskvorky import Piskvorky
+from bot.CNNPlayer import CNNPLayer
+import os
+from time import sleep
+
 
 BLACK = (0, 0, 0)
 GRID_COLOR = (19, 20, 20)
@@ -20,6 +24,7 @@ def main():
     SCREEN.fill(SQUARE_COLOR)
     CLOCK = pygame.time.Clock()
     drawGrid()
+    print(os.getcwd())
 
     game = Piskvorky(VELIKOST)
     game.move((1, 1))
@@ -27,6 +32,8 @@ def main():
     game_ended = False
 
     turn_user = True
+    AI = CNNPLayer(VELIKOST,name="5", load = "..\\bot\\CNN 5 8",to_train = False)
+    AI.newgame(side=game.O, other=game.X)
     vysledek = 0
     while True:
         if game_ended:
@@ -40,6 +47,8 @@ def main():
             # text s výsledkem, čára přes vyhranou věc, nejde dál psát
         else:
             drawBoard(game)
+
+            print(str(game))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -47,22 +56,24 @@ def main():
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if turn_user:
-                        move = get_move()
+                        move = get_move(game)
                         if move:
                             game.move(move)
+                            turn_user = False
                             if vysledek := game.end(move):
                                 game_ended = True
-                            turn_user = False
+                            continue
 
-            if not turn_user:
-                move = AI.move(game)
-                if move:
-                    game.move(move)
-                    if vysledek := game.end(move):
-                        game_ended = True
-                    turn_user = True
 
-            pass
+                if not turn_user:
+                    sleep(5)
+                    move = AI.move(game,False)
+                    if move:
+                        game.move(move)
+                        if vysledek := game.end(move):
+                            game_ended = True
+                        turn_user = True
+
             # nakreslit z boardu z game.board
             # poslouchat event lick, získat pozici, konvertovat na move, ceknout jestli je legalni a je na rade jestli ano udelat ho
 
@@ -81,9 +92,9 @@ def drawBoard(game):
     block_size = int(WINDOW_WIDTH / VELIKOST)  # Set the size of the grid block
     for ix, x in enumerate(range(0, WINDOW_WIDTH - block_size, block_size)):
         for iy, y in enumerate(range(0, WINDOW_HEIGHT - block_size, block_size)):
-            if game.state[iy, ix] == 1:
+            if game.state[iy, ix] == game.X:
                 drawX(SCREEN, X_COLOR, (x + PADDING, y + PADDING), (x + block_size - PADDING, y + block_size - PADDING))
-            elif game.state[iy, ix] == 2:
+            elif game.state[iy, ix] == game.O:
                 pygame.draw.circle(SCREEN, CIRCLE_COLOR, (x + block_size / 2, y + block_size / 2),
                                    block_size / 2 - PADDING,width=10)
 
@@ -100,7 +111,16 @@ def drawX(screen, color, xy, end):
                            (ex - thickness + i, ey))  # start_pos(x+thickness,y)---end_pos(width+x+thickness,height+y)
         pygame.draw.aaline(screen, color, (ex - thickness + i, y), (x + i, ey))
 
-def get_move():
+def get_move(game):
+    blocks_size = int(WINDOW_WIDTH / VELIKOST)  # Set the size of the grid block
+    x,y = pygame.mouse.get_pos()
+    ix = x // blocks_size
+    iy = y // blocks_size
+    print(ix,iy)
+    if game.state[iy,ix] == game.EMPTY:
+        return ix,iy
+    else:
+        return None
     # gets the space from the mouse position
     # returns xy if not is illegal None
     pass

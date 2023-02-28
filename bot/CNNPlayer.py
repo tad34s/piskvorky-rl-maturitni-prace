@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 import numpy as np
 import math
-from mmplayer import minimax
+from bot.mmplayer import minimax
 from copy import deepcopy
 from torch import Tensor
 
