@@ -10,8 +10,8 @@ from utils import displaystats
 
 def main():
     piskvorky = Piskvorky(velikost)
-    cnnp1 = CNNPLayer(velikost, name="5",load="CNN 5 8", to_train=True)
-    cnnp2 = CNNPLayer(velikost,name="6",load="CNN 6 8",to_train = True)
+    cnnp1 = CNNPLayer(velikost, name="4",load= "CNN 4 8", to_train=True)
+    cnnp2 = CNNPLayer(velikost,name="5", load = "CNN 5 8",to_train = True)
     minimax2 = MinimaxPlayer(depth=6, name="2")
     minimax1 = MinimaxPlayer(depth=1, name="1")
    # comb = CombPlayer(size=velikost, depth=3, name="1", model=None, load="CNN 6")
@@ -23,7 +23,7 @@ def main():
 
 
 def train(game, player1, player2):
-    number_of_games = 2000
+    number_of_games = 1000
     games_won = []
     games_len =[]
 
@@ -50,23 +50,18 @@ def train(game, player1, player2):
             turn,waiting = waiting,turn
 
         if vysledek == 1:
-            starter_reps = 5
-            seconder_reps = 2
+
             games_won.append(starter)
         elif vysledek == 2:
-            starter_reps = 2
-            seconder_reps = 5
             games_won.append(seconder)
         else:
-            starter_reps = 3
-            seconder_reps = 3
             games_won.append(vysledek)
 
-        multiplier = 0
+        multiplier = 10
         if player1.to_train:
-            player1.train(vysledek,epochs = 20, reps = starter_reps * multiplier)
+            player1.train(vysledek,epochs = 20, n_recalls = multiplier)
         if player2.to_train:
-            player2.train(vysledek, epochs = 20, reps = seconder_reps * multiplier)
+            player2.train(vysledek, epochs = 20, n_recalls = multiplier)
 
         games_len.append(n_of_moves)
 
