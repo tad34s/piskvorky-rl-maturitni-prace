@@ -113,7 +113,7 @@ class Piskvorky():
         for i in range(1, 6):
             if y + i > self.size - 1 or x - i < 0:
                 break
-            if self.state[y + i, x - 1] != self.state[y, x]:
+            if self.state[y + i, x - i] != self.state[y, x]:
                 break
             points += 1
 
@@ -184,7 +184,10 @@ class Piskvorky():
         sloupec = self.columnpoints(x, y)
         levadiagonala = self.leftdiagpoints(x, y)
         pravadiagonala = self.rightdiagpoints(x, y)
+        print(rada, sloupec, levadiagonala, pravadiagonala)
         if pravadiagonala >= 5 or levadiagonala >= 5 or rada >= 5 or sloupec >= 5:
+
+
             return self.wait
 
         elif np.count_nonzero(self.state == self.EMPTY) == 0:
