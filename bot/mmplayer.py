@@ -26,7 +26,7 @@ class MinimaxPlayer():
 
 
     def move(self, game, enemy_move):
-        xy = minimax(game,self.depth)
+        xy = minimax(game,self.depth,heuristic)
 
         game.move(xy)
         return xy
@@ -42,7 +42,7 @@ def heuristic(game, move):
     return value
 
 
-def minimax(game, depth):
+def minimax(game, depth,heuristic):
     def maxx(alpha, beta, depth, maxdepth):
         maxv = -2000
         maxx = None
@@ -136,6 +136,7 @@ def minimax(game, depth):
     val, x, y = maxx(-200, 200, 0, depth)
 
     if val == 0:
+        print("lol")
         return random.choice(listofpossiblemoves(game))
 
     return x, y

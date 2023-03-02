@@ -1,6 +1,6 @@
 # This is a sample Python script.
 from piskvorky import Piskvorky
-from utils import velikost
+from variables import VELIKOST
 from uselplayer import UserPlayer
 from CNNPlayer import CNNPLayer
 from mmplayer import MinimaxPlayer
@@ -14,9 +14,9 @@ from utils import displaystats
 
 
 def main():
-    piskvorky = Piskvorky(velikost)
-    cnn2 = CNNPLayer(velikost, name="CNN 2", load="CNN 7 8")
-    cnn = CNNPLayer(velikost, name = "CNN 1", load = "CNN 3 8")
+    piskvorky = Piskvorky(VELIKOST)
+    cnn2 = CNNPLayer(VELIKOST, name="CNN 2", load="CNN 7 8")
+    cnn = CNNPLayer(VELIKOST, name = "CNN 1", load = "CNN 3 8")
     #comb = CombPlayer(size=VELIKOST, depth=3,name="1", model=None, load="CNN 5")
     minim = MinimaxPlayer(3, name="Minimax 1")
     #user = UserPlayer()

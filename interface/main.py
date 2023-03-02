@@ -4,6 +4,8 @@ from variables import VELIKOST
 from piskvorky import Piskvorky
 from bot.CNNPlayer import CNNPLayer
 import os
+from bot.mmplayer import MinimaxPlayer
+from bot.combinationplayer import CombPlayer
 from time import sleep
 
 
@@ -31,7 +33,10 @@ def main():
     new_game=True
 
     turn_user = True
-    AI = CNNPLayer(VELIKOST,name="9", load = "..\\bot\\CNN 8 8",to_train = False)
+    AI = CNNPLayer(VELIKOST,name="9", load = "..\\bot\\CNN 10 8",to_train = False)
+    #AI = MinimaxPlayer(3, name="nicitel")
+    AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
+
     AI.newgame(side=game.O, other=game.X)
     vysledek = 0
     while True:
