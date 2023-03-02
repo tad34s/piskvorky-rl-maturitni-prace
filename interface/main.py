@@ -31,7 +31,7 @@ def main():
     new_game=True
 
     turn_user = True
-    AI = CNNPLayer(VELIKOST,name="5", load = "..\\bot\\CNN 5 8",to_train = False)
+    AI = CNNPLayer(VELIKOST,name="9", load = "..\\bot\\CNN 8 8",to_train = False)
     AI.newgame(side=game.O, other=game.X)
     vysledek = 0
     while True:

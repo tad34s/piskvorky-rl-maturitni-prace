@@ -96,7 +96,7 @@ class CNNPLayer():
         self.loss_value = -1.0
         # exploitation vs exploration
 
-        self.random_move_prob = 0.01
+        self.random_move_prob = 0.1
         self.random_move_decrease = 0.99999
         if self.to_train:
             self.random_move_prob = 0
@@ -158,7 +158,6 @@ class CNNPLayer():
         for index, value in enumerate(q_values):
             if not game.islegal(game.indextoxy(index)):
                 probs[index] = -1
-                print(game.indextoxy(index))
             elif probs[index] < 0:
                 probs[index] = 0.0
 
@@ -168,10 +167,6 @@ class CNNPLayer():
             move = np.argmax(probs.numpy())
             move = game.indextoxy(move)
 
-
-
-
-        print(move)
         game.move(move)
 
         # add reward

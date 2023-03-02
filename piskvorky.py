@@ -76,7 +76,6 @@ class Piskvorky():
             print("Out of columns")
             return False
         if self.state[y, x] != self.EMPTY:
-            print(f"occupied by {self.state[y, x]}")
             return False
 
         return True
@@ -184,10 +183,7 @@ class Piskvorky():
         sloupec = self.columnpoints(x, y)
         levadiagonala = self.leftdiagpoints(x, y)
         pravadiagonala = self.rightdiagpoints(x, y)
-        print(rada, sloupec, levadiagonala, pravadiagonala)
         if pravadiagonala >= 5 or levadiagonala >= 5 or rada >= 5 or sloupec >= 5:
-
-
             return self.wait
 
         elif np.count_nonzero(self.state == self.EMPTY) == 0:
