@@ -35,7 +35,7 @@ def main():
     turn_user = True
     AI = CNNPLayer(VELIKOST,name="9", load = "..\\bot\\CNN 10 8",to_train = False)
     #AI = MinimaxPlayer(3, name="nicitel")
-    AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
+   # AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
 
     AI.newgame(side=game.O, other=game.X)
     vysledek = 0
