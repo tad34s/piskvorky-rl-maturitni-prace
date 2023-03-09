@@ -1,4 +1,7 @@
 # Press the green button in the gutter to run the script.
+import random
+from typing import List, Any
+
 from piskvorky import Piskvorky
 from mmplayer import MinimaxPlayer
 from CNNPlayer import CNNPLayer
@@ -10,21 +13,24 @@ from utils import displaystats
 
 def main():
     piskvorky = Piskvorky(VELIKOST)
-    cnnp1 = CNNPLayer(VELIKOST, name="1", to_train=True)
-    cnnp2 = CNNPLayer(VELIKOST, name="2", to_train=True)
-    minimax2 = MinimaxPlayer(depth=6, name="2")
-    minimax1 = MinimaxPlayer(depth=1, name="1")
-    # comb = CombPlayer(size=VELIKOST, depth=3, name="1", model=None, load="CNN 6")
-    # CNNQplayer = CNNQPlayer(VELIKOST)
+    n_cnn_players= 10
+    cnn_players = []
+    waiting = list(range(n_cnn_players))
+    for i in range(n_cnn_players):
+        cnn_players.append(CNNPLayer(VELIKOST,memory_size=50, name=str(i),load=True, to_train=True))
     while True:
+
+        picks = random.sample(waiting, k=2)
+        cnnp1 = cnn_players[picks[0]]
+        cnnp2 = cnn_players[picks[1]]
+        print(cnnp1.name, cnnp2.name)
         game_record, games_len = train(piskvorky, cnnp1, cnnp2)
         cnnp1.save_model()
         cnnp2.save_model()
-    displaystats(game_record, games_len, cnnp1.name, cnnp2.name)
 
 
 def train(game, player1, player2):
-    number_of_games = 1000
+    number_of_games = 1
     games_won = []
     games_len = []
 
@@ -58,7 +64,7 @@ def train(game, player1, player2):
         else:
             games_won.append(vysledek)
 
-        multiplier = 10
+        multiplier = 0
         if player1.to_train:
             player1.train(vysledek, epochs=20, n_recalls=multiplier)
         if player2.to_train:

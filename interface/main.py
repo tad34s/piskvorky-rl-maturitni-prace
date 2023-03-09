@@ -33,7 +33,7 @@ def main():
     new_game=True
 
     turn_user = True
-    AI = CNNPLayer(VELIKOST,name="9", load = "..\\bot\\CNN 10 8",to_train = False)
+    AI = CNNPLayer(VELIKOST,name="9",memory_size=0, load = "..\\bot\\CNN 9 8",to_train = False)
     #AI = MinimaxPlayer(3, name="nicitel")
    # AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
 
@@ -93,6 +93,7 @@ def main():
                     move = AI.move(game, False)
                     drawBoard(game)
                     if vysledek := game.end(move):
+                        print(vysledek)
                         game_ended = True
                     turn_user = True
 
