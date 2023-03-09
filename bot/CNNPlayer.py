@@ -274,7 +274,7 @@ class CNNPLayer():
             self.random_move_prob *= self.random_move_decrease
 
     def minimax_move(self, game):
-        move = minimax(game, 2,heuristic)
+        move = minimax(game, 4,heuristic)
         return move
 
     def train_on_matches(self, matches: list, epochs):
