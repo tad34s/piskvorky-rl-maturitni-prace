@@ -116,13 +116,15 @@ class StateTargetValuesDataset(Dataset):
 
 class CNNPLayer():
 
-    def __init__(self, size, name,memory_size, to_train=False, load=False):
+    def __init__(self, size, name,memory_size, to_train=False, load=False, block_training = False):
         self.last_seen = None
         self.side = None
         self.size = size
         self.to_train = to_train
         self.name = "CNN " + name + " " + str(size)
+        self.file = "NNs\\" + self.name
         self.EMPTY = 0
+        self.block_training = block_training
         # model things
         self.model = CNNetwork(size=self.size)
         self.optim = torch.optim.Adam(self.model.parameters(), lr=1e-3)
@@ -131,7 +133,7 @@ class CNNPLayer():
             if type(load) == type(""):
                 self.model.load_state_dict(torch.load(load))
             else:
-                self.model.load_state_dict(torch.load(self.name))
+                self.model.load_state_dict(torch.load(self.file))
             self.model.eval()
 
         # reinforcemnt learning params
@@ -190,7 +192,7 @@ class CNNPLayer():
 
     def move(self, game, enemy_move):
 
-        if self.to_train:
+        if self.to_train and not self.block_training:
             self.curr_match_board_log.append(game.state.copy())
             # calculate punishemnt
             if self.curr_match_reward_log:
@@ -220,11 +222,16 @@ class CNNPLayer():
                 self.curr_match_next_max_log.append(q_values[np.argmax(probs.numpy())])
             self.curr_match_move_log.append(game.xytoindex(move))
             self.curr_match_values_log.append(q_values)
-            self.curr_match_reward_log.append(self.reward(game, move))
+            if self.block_training:
+                self.curr_match_reward_log.append(self.block_training(game, move))
+            else:
+                self.curr_match_reward_log.append(self.reward(game, move))
+
 
         return move
 
     def reward(self, game, move):
+
         odmena = 0
         points = [game.leftdiagpoints(move[0], move[1]), game.rightdiagpoints(move[0], move[1]),
                   game.rowpoints(move[0], move[1]), game.columnpoints(move[0], move[1])]
@@ -274,7 +281,7 @@ class CNNPLayer():
             self.random_move_prob *= self.random_move_decrease
 
     def minimax_move(self, game):
-        move = minimax(game, 4,heuristic)
+        move = minimax(game, 3,heuristic)
         return move
 
     def train_on_matches(self, matches: list, epochs):
@@ -314,24 +321,6 @@ class CNNPLayer():
                 loss.backward()
                 self.optim.step()
 
-
-
-    def load_values_from_memory(self, board_state_log, move_log, reward_log, final_reward):
-        print("retry values")
-        self.curr_match_values_log = []
-        self.curr_match_next_max_log = []
-        self.curr_match_board_log = board_state_log
-        self.curr_match_move_log = move_log
-        self.curr_match_reward_log = reward_log
-        for e, state in enumerate(self.curr_match_board_log):
-            input = self.encode(state)
-            probs, q_values = self.model.probs(input)
-            q_values = np.copy(q_values)
-            self.curr_match_values_log.append(q_values)
-            if e != 0:
-                self.curr_match_next_max_log.append(q_values[self.curr_match_move_log[e]])
-        self.curr_match_next_max_log.append(final_reward)
-
     def save_model(self):
-        torch.save(self.model.state_dict(), self.name)
+        torch.save(self.model.state_dict(), self.file)
 
