@@ -122,7 +122,9 @@ class CNNPLayer():
         self.size = size
         self.to_train = to_train
         self.name = "CNN " + name + " " + str(size)
-        self.file = "NNs\\" + self.name
+        print(self.name)
+        self.file = "NNs\\" + self.name.replace(" ","-") + ".nn"
+        print(self.file)
         self.EMPTY = 0
         self.block_training = block_training
         # model things
@@ -322,5 +324,5 @@ class CNNPLayer():
                 self.optim.step()
 
     def save_model(self):
-        torch.save(self.model.state_dict(), self.file)
+        torch.save(self.model.state_dict(), self.file )#.replace(" ","-"))
 
