@@ -22,7 +22,7 @@ def train_blocking(game: Piskvorky,cnn_number: int):
 
     n_games = 100
     teacher = TeacherPlayer(game.size)
-    player = CNNPLayer(VELIKOST, memory_size=50, name=str(cnn_number), load=False, to_train=True, block_training=teacher.reward)
+    player = CNNPLayer(VELIKOST, memory_size=50, name=str(cnn_number), load=True, to_train=True, block_training=teacher.reward)
     for i in range(n_games):
         game.reset()
         turn = teacher

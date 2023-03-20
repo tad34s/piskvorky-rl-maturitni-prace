@@ -226,7 +226,8 @@ class CNNPLayer():
             self.curr_match_move_log.append(game.xytoindex(move))
             self.curr_match_values_log.append(q_values)
             if self.block_training:
-                self.curr_match_reward_log.append(self.block_training(game, move))
+                reward = self.block_training(game,move)
+                self.curr_match_reward_log.append(reward)
             else:
                 self.curr_match_reward_log.append(self.reward(game, move))
 
