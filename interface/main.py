@@ -33,11 +33,11 @@ def main():
     new_game=True
 
     turn_user = True
-    AI = CNNPLayer(VELIKOST,name="9",memory_size=0, load = "..\\bot\\NNs\\CNN 7 8",to_train = False)
+    AI = CNNPLayer(VELIKOST,name="9",memory_size=0, load = "..\\bot\\NNs\\CNN-7-8.nn",to_train = False)
     #AI = MinimaxPlayer(3, name="nicitel")
    # AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
 
-    AI.newgame(side=game.O, other=game.X)
+    AI.new_game(side=game.O, other=game.X)
     vysledek = 0
     while True:
         if new_game:
@@ -51,7 +51,7 @@ def main():
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONDOWN:
                         game.reset()
-                        AI.newgame(side=game.O, other=game.X)
+                        AI.new_game(side=game.O, other=game.X)
                         turn_user = True
                         game_ended = False
                         new_game = True

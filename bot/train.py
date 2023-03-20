@@ -41,8 +41,8 @@ def train(game, player1, player2):
         seconder = player2.name
         turn = player1
         waiting = player2
-        player1.newgame(side=game.X, other=game.O)
-        player2.newgame(side=game.O, other=game.X)
+        player1.new_game(side=game.X, other=game.O)
+        player2.new_game(side=game.O, other=game.X)
         vysledek = 0
         n_of_moves = 0
         move = None

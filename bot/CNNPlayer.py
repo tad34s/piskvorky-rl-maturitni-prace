@@ -122,9 +122,7 @@ class CNNPLayer():
         self.size = size
         self.to_train = to_train
         self.name = "CNN " + name + " " + str(size)
-        print(self.name)
         self.file = "NNs\\" + self.name.replace(" ","-") + ".nn"
-        print(self.file)
         self.EMPTY = 0
         self.block_training = block_training
         # model things
@@ -147,6 +145,8 @@ class CNNPLayer():
         self.random_move_increase=1.1# if player lost try to explore mroe
         self.random_move_prob = 0.05
         self.random_move_decrease = 0.9
+        if block_training:
+            self.random_move_prob = 0.1
         if not self.to_train:
             self.random_move_prob = 0
         # logs
@@ -167,7 +167,7 @@ class CNNPLayer():
         output = torch.tensor(nparray, dtype=torch.float32)
         return output
 
-    def newgame(self, side, other):
+    def new_game(self, side, other):
         self.side = side
         self.wait = other
         self.curr_match_board_log = []  # not encoded history of board states
@@ -194,11 +194,12 @@ class CNNPLayer():
 
     def move(self, game, enemy_move):
 
-        if self.to_train and not self.block_training:
+        if self.to_train:
             self.curr_match_board_log.append(game.state.copy())
             # calculate punishemnt
-            if self.curr_match_reward_log:
-                self.curr_match_reward_log[-1] -= self.reward(game, enemy_move)
+            if not self.block_training:
+                if self.curr_match_reward_log:
+                    self.curr_match_reward_log[-1] -= self.reward(game, enemy_move)
 
         input = self.encode(game.state)
         probs, q_values = self.model.probs(input)
@@ -277,9 +278,9 @@ class CNNPLayer():
         self.memory.add_match(deepcopy(this_match))
 
         self.train_on_matches(games_from_memory, epochs=15)
-        if reward == self.loss_value:
+        if reward == self.loss_value and not self.block_training:
             self.random_move_prob*= self.random_move_increase
-        else:
+        elif not self.block_training:
             self.random_move_prob *= self.random_move_decrease
 
     def minimax_move(self, game):
