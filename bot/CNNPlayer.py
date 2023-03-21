@@ -5,10 +5,12 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import math
-from bot.mmplayer import minimax, listofpossiblemoves,heuristic
+from bot.mmplayer import minimax, listofpossiblemoves
 from copy import deepcopy, copy
 from torch import Tensor
 
+def heuristic(game,move):
+    return 0
 
 
 class CNNetwork(torch.nn.Module):
@@ -146,7 +148,8 @@ class CNNPLayer():
         self.random_move_prob = 0.05
         self.random_move_decrease = 0.9
         if block_training:
-            self.random_move_prob = 0.1
+            self.random_move_prob = 0.25
+            self.random_move_decrease = 0.6
         if not self.to_train:
             self.random_move_prob = 0
         # logs
@@ -285,6 +288,7 @@ class CNNPLayer():
             self.random_move_prob *= self.random_move_decrease
 
     def minimax_move(self, game):
+        print("minimaxmove")
         move = minimax(game, 3,heuristic)
         return move
 

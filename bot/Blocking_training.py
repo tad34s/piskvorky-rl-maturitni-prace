@@ -8,22 +8,22 @@ from piskvorky import Piskvorky
 
 def main():
     piskvorky = Piskvorky(VELIKOST)
-    n_cnn_players = 10
+    n_cnn_players = 181
     cnn_players = []
     episodes = 100
     waiting = list(range(n_cnn_players))
     while True:
-        pick = random.sample(waiting, k=1)
-        print(pick)
-        train_blocking(piskvorky, pick[0])
+        #pick = random.sample(waiting, k=1)
+        train_blocking(piskvorky, 181)
 
 
 def train_blocking(game: Piskvorky,cnn_number: int):
 
     n_games = 100
     teacher = TeacherPlayer(game.size)
-    player = CNNPLayer(VELIKOST, memory_size=50, name=str(cnn_number), load=True, to_train=True, block_training=teacher.reward)
+    player = CNNPLayer(VELIKOST, memory_size=50, name=str(cnn_number), load=False, to_train=True, block_training=teacher.reward)
     for i in range(n_games):
+        print(i)
         game.reset()
         turn = teacher
         waiting = player
