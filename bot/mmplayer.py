@@ -33,10 +33,12 @@ class MinimaxPlayer():
 
 
 def heuristic(game, move):
-    value = max(game.rowpoints(move[0], move[1]),
-                game.columnpoints(move[0], move[1]),
-                game.leftdiagpoints(move[0], move[1]),
-                game.rightdiagpoints(move[0], move[1]))
+    row =game.rowpoints(move[0], move[1])
+    column =game.columnpoints(move[0], move[1])
+    leftdiag = game.leftdiagpoints(move[0], move[1])
+    rightdiag = game.rightdiagpoints(move[0], move[1])
+
+    value = max((row,column,leftdiag,rightdiag))
     value = value / 6
 
     return value
@@ -57,9 +59,10 @@ def minimax(game, depth,heuristic):
             # nechci delat cely game tree tak checkuju hloubku
             # pridat rozhodovani podle heuristiky
             if depth > maxdepth:
+                value = heuristic(game, mov)
                 game.insertempty(mov)
                 depth -= 1
-                return heuristic(game, mov), mov[0], mov[1]
+                return value, mov[0], mov[1]
 
             if game.end(mov) != "0" and game.end(mov):
                 game.insertempty(mov)
@@ -101,14 +104,16 @@ def minimax(game, depth,heuristic):
 
             # nechci delat cely game tree tak checkuju hloubku
             if depth > maxdepth:
-                game.insertempty(mov)
-                depth -= 1
-                return heuristic(game, mov), mov[0], mov[1]
+                if depth > maxdepth:
+                    value = heuristic(game, mov)
+                    game.insertempty(mov)
+                    depth -= 1
+                    return value *(-1), mov[0], mov[1]
 
             if game.end(mov) != "0" and game.end(mov):
                 game.insertempty(mov)
                 depth -= 1
-                return 10, mov[0], mov[1]
+                return -10, mov[0], mov[1]
             if not listofpossiblemoves(game):
                 game.insertempty(mov)
                 depth -= 1
