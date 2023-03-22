@@ -146,7 +146,7 @@ class CNNPLayer():
         self.random_move_prob = 0.05
         self.random_move_decrease = 0.9
         if block_training:
-            self.random_move_prob = 0.1
+            self.random_move_prob = 0.5
         if not self.to_train:
             self.random_move_prob = 0
         # logs
@@ -168,6 +168,7 @@ class CNNPLayer():
         return output
 
     def new_game(self, side, other):
+        print(self.random_move_prob)
         self.side = side
         self.wait = other
         self.curr_match_board_log = []  # not encoded history of board states
@@ -279,12 +280,17 @@ class CNNPLayer():
         self.memory.add_match(deepcopy(this_match))
 
         self.train_on_matches(games_from_memory, epochs=15)
-        if reward == self.loss_value and not self.block_training:
-            self.random_move_prob*= self.random_move_increase
-        elif not self.block_training:
+        if self.block_training:
             self.random_move_prob *= self.random_move_decrease
 
+        else:
+            if reward == self.loss_value:
+                self.random_move_prob*= self.random_move_increase
+            elif not self.block_training:
+                self.random_move_prob *= self.random_move_decrease
+
     def minimax_move(self, game):
+        print("minimax move")
         move = minimax(game, 3,heuristic)
         return move
 

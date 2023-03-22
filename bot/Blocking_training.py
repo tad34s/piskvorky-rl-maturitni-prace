@@ -2,45 +2,7 @@ from CNNPlayer import CNNPLayer
 from variables import VELIKOST
 import random
 from piskvorky import Piskvorky
-
-
-
-
-def main():
-    piskvorky = Piskvorky(VELIKOST)
-    n_cnn_players = 10
-    cnn_players = []
-    episodes = 100
-    waiting = list(range(n_cnn_players))
-    while True:
-        pick = random.sample(waiting, k=1)
-        print(pick)
-        train_blocking(piskvorky, pick[0])
-
-
-def train_blocking(game: Piskvorky,cnn_number: int):
-
-    n_games = 100
-    teacher = TeacherPlayer(game.size)
-    player = CNNPLayer(VELIKOST, memory_size=50, name=str(cnn_number), load=True, to_train=True, block_training=teacher.reward)
-    for i in range(n_games):
-        game.reset()
-        turn = teacher
-        waiting = player
-        teacher.new_game(game.X,game.O)
-        player.new_game(game.O,game.X)
-        move = None
-        while True:
-            move = turn.move(game, move)
-            print(str(game))
-            print(move)
-            if game.end(move):
-                vysledek = game.end(move)
-                break
-            turn, waiting = waiting, turn
-
-        player.train(vysledek, epochs=20, n_recalls=0)
-    player.save_model()
+from copy import copy
 
 class TeacherPlayer():
 
@@ -53,15 +15,16 @@ class TeacherPlayer():
     def new_game(self,side,other):
         self.line_list = self.generate_line_list()
         self.game_length = 0
-        print(self.line_list)
     def reward(self, game: Piskvorky, enemy_move: tuple):
         reward_points = 0
         points = []
         for index, line in enumerate(self.line_list):
             if enemy_move in line[0]:
-                points.append(line[1])
+                points.append(copy(line[1]))
                 self.line_list[index][1] = 0
-        reward_points = sum([(x**3)/(25 *(i**2+1))
+        points.sort(reverse=True)
+        print(points)
+        reward_points = sum([(x**3)/(20 *(i**2+1))
                              for i,x in enumerate(points)])
         reward_points += self.game_length/60
         print(reward_points)
@@ -88,7 +51,7 @@ class TeacherPlayer():
         for index, line in enumerate(self.line_list):
             if output in line[0]:
                 self.line_list[index][1] +=1
-
+                print(line)
         self.game_length += 1
         game.move(output)
         return output
@@ -104,39 +67,61 @@ class TeacherPlayer():
                 if column >= 4:
                     line = [(column - x, row) for x in range(5)]
                     line_list.append([line, 0])
-                    room_left = True
+
 
                 if row >= 4:
                     line = [(column, row - x) for x in range(5)]
                     line_list.append([line, 0])
-                    room_up = True
 
-                if self.game_size - column >= 5:
-                    line = [(column + x, row) for x in range(5)]
-                    line_list.append([line, 0])
-                    room_right = True
 
-                if self.game_size - row >= 5:
-                    line = [(column, row + x) for x in range(5)]
-                    line_list.append([line, 0])
-                    room_down = True
-
-                if room_up and room_left:
+                if row >= 4 and column >=4:
                     line = [(column - x, row - x) for x in range(5)]
                     line_list.append([line, 0])
-
-                if room_up and room_right:
-                    line = [(column + x, row - x) for x in range(5)]
+                    line = [(column -4 + x, row - x) for x in range(5)]
                     line_list.append([line, 0])
 
-                if room_down and room_left:
-                    line = [[column - x, row + x] for x in range(5)]
-                    line_list.append([line, 0])
-
-                if room_down and room_right:
-                    line = [(column + x, row + x) for x in range(5)]
-                    line_list.append([line, 0])
         return line_list
+
+
+
+def main():
+    piskvorky = Piskvorky(VELIKOST)
+    n_cnn_players = 10
+    cnn_players = []
+    episodes = 100
+    #waiting = list(range(n_cnn_players))
+    teacher = TeacherPlayer(piskvorky.size)
+    player = CNNPLayer(VELIKOST, memory_size=50, name=str(181), load=True, to_train=True,
+                       block_training=teacher.reward)
+    while True:
+        #pick = random.sample(waiting, k=1)
+        #print(pick)
+        train_blocking(piskvorky, player,teacher)
+
+
+def train_blocking(game: Piskvorky,player: CNNPLayer, teacher: TeacherPlayer):
+
+    n_games = 100
+    player.random_move_prob = 0.5
+    for i in range(n_games):
+        game.reset()
+        print(i)
+        turn = teacher
+        waiting = player
+        teacher.new_game(game.X,game.O)
+        player.new_game(game.O,game.X)
+        move = None
+        while True:
+            move = turn.move(game, move)
+            print(str(game))
+            if game.end(move):
+                vysledek = game.end(move)
+                break
+            turn, waiting = waiting, turn
+
+        player.train(vysledek, epochs=10, n_recalls=10)
+    player.save_model()
+
 
 if __name__ == "__main__":
     main()
