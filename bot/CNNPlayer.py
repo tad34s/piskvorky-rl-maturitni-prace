@@ -5,18 +5,20 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 import math
-from bot.mmplayer import minimax, listofpossiblemoves,heuristic
+from bot.mmplayer import minimax, listofpossiblemoves
 from copy import deepcopy, copy
 from torch import Tensor
 
 
+def heuristic(game,move):
+    return 0
 
 class CNNetwork(torch.nn.Module):
 
     def __init__(self, size):
         self.size = size
         super(CNNetwork, self).__init__()
-        self.block1 = nn.Sequential(nn.Conv2d(3, 128, kernel_size=3, stride=1, padding=1),
+        self.block1 = nn.Sequential(nn.Conv2d(2, 128, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
                                     nn.BatchNorm2d(128),
                                     )
@@ -82,22 +84,43 @@ class CNNMemory():
 
     def __init__(self, size: int):
         self.size = size
-        self.games = []
+        self.games_won=[]
+        self.games_drawn=[]
+        self.games_lost=[]
 
     def add_match(self, match: Match):
-        if len(self.games) >= self.size:
-            self.games.pop(0)
-        self.games.append(match)
+
+        if match.final_reward > 0:
+            self.add_match_to_list(self.games_won,match)
+        elif match.final_reward < 0:
+            self.add_match_to_list(self.games_lost,match)
+        else:
+            self.add_match_to_list(self.games_drawn,match)
+
+    def add_match_to_list(self,games:list,match:Match):
+        if len(games) >= self.size:
+            games.pop(0)
+        games.append(match)
 
     def __len__(self):
-        return len(self.games)
+        return len(self.games_won)+len(self.games_lost) +len(self.games_drawn)
 
     def get_random_matches(self, n: int) -> list:
         if n > len(self):
             n = len(self)
-        output = random.sample(self.games, k=n)
+        output = []
+        size = n//3
+        output.extend(self.sample(self.games_won, k=size))
+        output.extend(self.sample(self.games_lost, k=size))
+        output.extend(self.sample(self.games_drawn, k=size))
         return output
 
+    def sample(self,games:list,k:int):
+        if k > len(games):
+            output = games
+        else:
+            output = random.sample(games, k=k)
+        return output
 
 class StateTargetValuesDataset(Dataset):
 
@@ -116,7 +139,7 @@ class StateTargetValuesDataset(Dataset):
 
 class CNNPLayer():
 
-    def __init__(self, size, name,memory_size, to_train=False, load=False, block_training = False):
+    def __init__(self, size, name,memory_size, to_train=False, load=False, block_training = False, pretraining = False):
         self.last_seen = None
         self.side = None
         self.size = size
@@ -127,7 +150,7 @@ class CNNPLayer():
         self.block_training = block_training
         # model things
         self.model = CNNetwork(size=self.size)
-        self.optim = torch.optim.Adam(self.model.parameters(), lr=1e-3)
+        self.optim = torch.optim.SGD(self.model.parameters(), lr=1e-3)
         self.loss_fn = nn.MSELoss()
         if load:
             if type(load) == type(""):
@@ -137,18 +160,18 @@ class CNNPLayer():
             self.model.eval()
 
         # reinforcemnt learning params
-        self.reward_discount = 0.95
-        self.win_value = 1.0
+        self.reward_discount = 0.99
+        self.win_value = 10.0
         self.draw_value = 0.0
-        self.loss_value = -1.0
+        self.loss_value = -10.0
         # exploitation vs exploration
         self.random_move_increase=1.1# if player lost try to explore mroe
-        self.random_move_prob = 0.05
-        self.random_move_decrease = 0.9
-        if block_training:
-            self.random_move_prob = 0.5
+        self.random_move_prob = 0.9999
+        self.random_move_decrease = 0.99997
+        self.pretraining = pretraining
         if not self.to_train:
             self.random_move_prob = 0
+
         # logs
         self.curr_match_board_log = []
         self.curr_match_move_log = []
@@ -161,8 +184,7 @@ class CNNPLayer():
     def encode(self, state):
         nparray = np.array([
             [(state == self.side).astype(int),
-             (state == self.wait).astype(int),
-             (state == self.EMPTY).astype(int)]
+             (state == self.wait).astype(int)]
         ])
         output = torch.tensor(nparray, dtype=torch.float32)
         return output
@@ -212,8 +234,8 @@ class CNNPLayer():
                 probs[index] = 0.0
 
         rand_n = np.random.rand(1)
-        if self.to_train and (rand_n < self.random_move_prob):
-            move = self.minimax_move(game)
+        if self.to_train and (rand_n < self.random_move_prob or self.pretraining):
+            move = random.choice(listofpossiblemoves(game))
         else:
             move = np.argmax(probs.numpy())
             move = game.indextoxy(move)
@@ -226,6 +248,7 @@ class CNNPLayer():
                 self.curr_match_next_max_log.append(q_values[np.argmax(probs.numpy())])
             self.curr_match_move_log.append(game.xytoindex(move))
             self.curr_match_values_log.append(q_values)
+
             if self.block_training:
                 reward = self.block_training(game,move)
                 self.curr_match_reward_log.append(reward)
@@ -240,11 +263,12 @@ class CNNPLayer():
         odmena = 0
         points = [game.leftdiagpoints(move[0], move[1]), game.rightdiagpoints(move[0], move[1]),
                   game.rowpoints(move[0], move[1]), game.columnpoints(move[0], move[1])]
+        points.sort(reverse=True)
         for point in points:
             if odmena == 0:
-                odmena += point ** 2 / 30
+                odmena += point ** 2 / 10
             else:
-                odmena += point ** 2 / 70
+                odmena += point ** 2 / 40
 
         return odmena
 
@@ -265,29 +289,18 @@ class CNNPLayer():
         encoded_board = [self.encode(x) for x in self.curr_match_board_log]
         this_match = Match(encoded_board, self.curr_match_move_log, self.curr_match_reward_log, reward)
         # if lost last game and now won, i want the nn to really remember how to win
-        if len(self.memory) > 1 > self.memory.games[-1].final_reward and 0 > self.memory.games[-2].final_reward and reward>0:
-            reps = 1
-            print("reps")
-        else:
-            reps = 1
-        for i in range(reps):
-
-            self.train_on_matches([this_match], epochs)
 
 
-        games_from_memory = self.memory.get_random_matches(n_recalls)
-
+        #self.train_on_matches([this_match], epochs)
         self.memory.add_match(deepcopy(this_match))
 
-        self.train_on_matches(games_from_memory, epochs=15)
-        if self.block_training:
-            self.random_move_prob *= self.random_move_decrease
+        if not self.pretraining:
+            games_from_memory = self.memory.get_random_matches(n_recalls)
 
-        else:
-            if reward == self.loss_value:
-                self.random_move_prob*= self.random_move_increase
-            elif not self.block_training:
-                self.random_move_prob *= self.random_move_decrease
+            self.train_on_matches(games_from_memory, epochs=15)
+
+        if self.to_train and not self.pretraining:
+            self.random_move_prob *= self.random_move_decrease
 
     def minimax_move(self, game):
         print("minimax move")
@@ -320,7 +333,7 @@ class CNNPLayer():
             for batch in dataloader:
                 # We run the training step with the recorded inputs and new Q value targets.
                 X, y = batch
-                X = X.view((-1, 3, 8, 8))
+                X = X.view((-1, 2, 8, 8))
                 y_hat = self.model(X)
                 # y = y.view(-1, 1)
 

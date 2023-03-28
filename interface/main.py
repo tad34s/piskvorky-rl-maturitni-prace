@@ -33,7 +33,7 @@ def main():
     new_game=True
 
     turn_user = True
-    AI = CNNPLayer(VELIKOST,name="9",memory_size=0, load = "..\\bot\\NNs\\CNN-181-8.nn",to_train = False)
+    AI = CNNPLayer(VELIKOST,name="9",memory_size=0, load = "..\\bot\\NNs\\CNN-184-8.nn",to_train = False)
     #AI = MinimaxPlayer(3, name="nicitel")
    # AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
 

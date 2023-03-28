@@ -24,9 +24,9 @@ class TeacherPlayer():
                 self.line_list[index][1] = 0
         points.sort(reverse=True)
         print(points)
-        reward_points = sum([(x**3)/(20 *(i**2+1))
+        reward_points = sum([(x**3)/(10 *(i**2+1))
                              for i,x in enumerate(points)])
-        reward_points += self.game_length/60
+        reward_points += self.game_length/40
         print(reward_points)
         return reward_points
 
@@ -59,10 +59,7 @@ class TeacherPlayer():
         line_list = []
         for row in range(self.game_size):
             for column in range(self.game_size):
-                room_right = False
-                room_left = False
-                room_up = False
-                room_down = False
+
 
                 if column >= 4:
                     line = [(column - x, row) for x in range(5)]
@@ -91,18 +88,22 @@ def main():
     episodes = 100
     #waiting = list(range(n_cnn_players))
     teacher = TeacherPlayer(piskvorky.size)
-    player = CNNPLayer(VELIKOST, memory_size=50, name=str(181), load=True, to_train=True,
+    player = CNNPLayer(VELIKOST, memory_size=100, name=str(184), load=False, to_train=True,pretraining= True,
                        block_training=teacher.reward)
-    while True:
+    counter = 0
+    for i in range(100):
         #pick = random.sample(waiting, k=1)
         #print(pick)
+        print("episode",counter)
+        if counter == 6:
+            player.pretraining = False
         train_blocking(piskvorky, player,teacher)
+        counter+=1
 
 
-def train_blocking(game: Piskvorky,player: CNNPLayer, teacher: TeacherPlayer):
+def train_blocking(game: Piskvorky,player: CNNPLayer, teacher: TeacherPlayer,):
 
     n_games = 100
-    player.random_move_prob = 0.5
     for i in range(n_games):
         game.reset()
         print(i)
@@ -119,7 +120,7 @@ def train_blocking(game: Piskvorky,player: CNNPLayer, teacher: TeacherPlayer):
                 break
             turn, waiting = waiting, turn
 
-        player.train(vysledek, epochs=10, n_recalls=10)
+        player.train(vysledek, epochs=10, n_recalls=60)
     player.save_model()
 
 
