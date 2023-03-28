@@ -19,16 +19,13 @@ class CNNetwork(torch.nn.Module):
         self.size = size
         super(CNNetwork, self).__init__()
         self.block1 = nn.Sequential(nn.Conv2d(2, 128, kernel_size=3, stride=1, padding=1),
-                                    nn.ReLU(),
-                                    nn.BatchNorm2d(128),
+                                    nn.ReLU()
                                     )
         self.block2 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
-                                    nn.BatchNorm2d(128),
                                     )
         self.block3 = nn.Sequential(nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
-                                    nn.ReLU(),
-                                    nn.BatchNorm2d(64),
+                                    nn.ReLU()
                                     )
 
         self.linear1 = nn.Linear(4096, 1024)
