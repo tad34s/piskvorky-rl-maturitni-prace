@@ -24,9 +24,9 @@ class TeacherPlayer():
                 self.line_list[index][1] = 0
         points.sort(reverse=True)
         print(points)
-        reward_points = sum([(x**3)/(10 *(i**2+1))
+        reward_points = sum([(x**2)/(30 *(i+1))
                              for i,x in enumerate(points)])
-        reward_points += self.game_length/40
+        reward_points += self.game_length/80
         print(reward_points)
         return reward_points
 

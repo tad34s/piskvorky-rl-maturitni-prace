@@ -161,9 +161,9 @@ class CNNPLayer():
 
         # reinforcemnt learning params
         self.reward_discount = 0.99
-        self.win_value = 10.0
+        self.win_value = 1.0
         self.draw_value = 0.0
-        self.loss_value = -10.0
+        self.loss_value = -1.0
         # exploitation vs exploration
         self.random_move_increase=1.1# if player lost try to explore mroe
         self.random_move_prob = 0.9999
@@ -343,6 +343,7 @@ class CNNPLayer():
                 self.optim.zero_grad()
                 loss.backward()
                 self.optim.step()
+
 
     def save_model(self):
         torch.save(self.model.state_dict(), self.file )#.replace(" ","-"))
