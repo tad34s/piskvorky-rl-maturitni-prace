@@ -20,15 +20,12 @@ class CNNetwork(torch.nn.Module):
         super(CNNetwork, self).__init__()
         self.block1 = nn.Sequential(nn.Conv2d(2, 128, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
-                                    nn.BatchNorm2d(128),
                                     )
         self.block2 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
-                                    nn.BatchNorm2d(128),
                                     )
         self.block3 = nn.Sequential(nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
-                                    nn.BatchNorm2d(64),
                                     )
 
         self.linear1 = nn.Linear(4096, 1024)
@@ -150,7 +147,7 @@ class CNNPLayer():
         self.block_training = block_training
         # model things
         self.model = CNNetwork(size=self.size)
-        self.optim = torch.optim.SGD(self.model.parameters(), lr=1e-3)
+        self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = nn.MSELoss()
         if load:
             if type(load) == type(""):
@@ -226,6 +223,7 @@ class CNNPLayer():
 
         input = self.encode(game.state)
         probs, q_values = self.model.probs(input)
+        print(q_values)
         q_values = np.copy(q_values)
         for index, value in enumerate(q_values):
             if not game.islegal(game.indextoxy(index)):
@@ -241,6 +239,7 @@ class CNNPLayer():
             move = game.indextoxy(move)
 
         game.move(move)
+
 
         # add reward
         if self.to_train:
@@ -343,7 +342,6 @@ class CNNPLayer():
                 self.optim.zero_grad()
                 loss.backward()
                 self.optim.step()
-
 
     def save_model(self):
         torch.save(self.model.state_dict(), self.file )#.replace(" ","-"))
