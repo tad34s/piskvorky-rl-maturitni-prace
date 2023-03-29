@@ -19,13 +19,13 @@ class CNNetwork(torch.nn.Module):
         self.size = size
         super(CNNetwork, self).__init__()
         self.block1 = nn.Sequential(nn.Conv2d(2, 128, kernel_size=3, stride=1, padding=1),
-                                    nn.ReLU()
+                                    nn.ReLU(),
                                     )
         self.block2 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
                                     )
         self.block3 = nn.Sequential(nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
-                                    nn.ReLU()
+                                    nn.ReLU(),
                                     )
 
         self.linear1 = nn.Linear(4096, 1024)
@@ -147,7 +147,7 @@ class CNNPLayer():
         self.block_training = block_training
         # model things
         self.model = CNNetwork(size=self.size)
-        self.optim = torch.optim.SGD(self.model.parameters(), lr=1e-3)
+        self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = nn.MSELoss()
         if load:
             if type(load) == type(""):
@@ -158,9 +158,9 @@ class CNNPLayer():
 
         # reinforcemnt learning params
         self.reward_discount = 0.99
-        self.win_value = 10.0
+        self.win_value = 1.0
         self.draw_value = 0.0
-        self.loss_value = -10.0
+        self.loss_value = -1.0
         # exploitation vs exploration
         self.random_move_increase=1.1# if player lost try to explore mroe
         self.random_move_prob = 0.9999
@@ -223,6 +223,7 @@ class CNNPLayer():
 
         input = self.encode(game.state)
         probs, q_values = self.model.probs(input)
+        print(q_values)
         q_values = np.copy(q_values)
         for index, value in enumerate(q_values):
             if not game.islegal(game.indextoxy(index)):
@@ -238,6 +239,7 @@ class CNNPLayer():
             move = game.indextoxy(move)
 
         game.move(move)
+
 
         # add reward
         if self.to_train:
