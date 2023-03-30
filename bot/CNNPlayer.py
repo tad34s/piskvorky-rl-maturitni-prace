@@ -56,7 +56,7 @@ class CNNetwork(torch.nn.Module):
 class Match():
 
     def __init__(self, board_log, move_log, rewards_log, final_reward):
-        self.last_seen = None
+        #self.last_seen = None
         self.encoded_board_log = board_log
         self.move_log = move_log
         self.rewards_log = rewards_log
@@ -136,8 +136,8 @@ class StateTargetValuesDataset(Dataset):
 
 class CNNPLayer():
 
-    def __init__(self, size, name,memory_size, to_train=False, load=False, block_training = False, pretraining = False):
-        self.last_seen = None
+    def __init__(self, size, name,memory_size, to_train=False, load=False, block_training = False, pretraining = False, double_dqn = False):
+       # self.last_seen = None
         self.side = None
         self.size = size
         self.to_train = to_train
@@ -155,6 +155,9 @@ class CNNPLayer():
             else:
                 self.model.load_state_dict(torch.load(self.file))
             self.model.eval()
+
+        self.old_network = None
+        self.double_dqn = double_dqn
 
         # reinforcemnt learning params
         self.reward_discount = 0.99
@@ -222,7 +225,10 @@ class CNNPLayer():
                     self.curr_match_reward_log[-1] -= self.reward(game, enemy_move)
 
         input = self.encode(game.state)
-        probs, q_values = self.model.probs(input)
+        if self.double_dqn and self.old_network:
+            probs, q_values = self.old_network.probs(input)
+        else:
+            probs, q_values = self.model.probs(input)
         print(q_values)
         q_values = np.copy(q_values)
         for index, value in enumerate(q_values):
@@ -234,6 +240,7 @@ class CNNPLayer():
         rand_n = np.random.rand(1)
         if self.to_train and (rand_n < self.random_move_prob or self.pretraining):
             move = random.choice(listofpossiblemoves(game))
+            #move = self.minimax_move(game)
         else:
             move = np.argmax(probs.numpy())
             move = game.indextoxy(move)
@@ -308,6 +315,7 @@ class CNNPLayer():
 
     def train_on_matches(self, matches: list, epochs):
 
+        self.old_network = deepcopy(self.model)
         
 
         # trains on the game loaded in memory
