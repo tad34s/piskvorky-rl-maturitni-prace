@@ -3,6 +3,8 @@ from variables import VELIKOST
 import random
 from piskvorky import Piskvorky
 from copy import copy
+from matplotlib.pyplot import plot, show
+
 
 class TeacherPlayer():
 
@@ -12,9 +14,10 @@ class TeacherPlayer():
         self.to_train = False
         self.game_length = 0
 
-    def new_game(self,side,other):
+    def new_game(self, side, other):
         self.line_list = self.generate_line_list()
         self.game_length = 0
+
     def reward(self, game: Piskvorky, enemy_move: tuple):
         reward_points = 0
         points = []
@@ -24,9 +27,9 @@ class TeacherPlayer():
                 self.line_list[index][1] = 0
         points.sort(reverse=True)
         print(points)
-        reward_points = sum([(x**2)/(30 *(i+1))
-                             for i,x in enumerate(points)])
-        reward_points += self.game_length/80
+        reward_points = sum([(x ** 2) / (30 * (i + 1))
+                             for i, x in enumerate(points)])
+        reward_points += self.game_length / 80
         print(reward_points)
         return reward_points
 
@@ -50,67 +53,70 @@ class TeacherPlayer():
         output = random.choice(moves)
         for index, line in enumerate(self.line_list):
             if output in line[0]:
-                self.line_list[index][1] +=1
+                self.line_list[index][1] += 1
                 print(line)
         self.game_length += 1
         game.move(output)
         return output
+
     def generate_line_list(self):
         line_list = []
         for row in range(self.game_size):
             for column in range(self.game_size):
 
-
                 if column >= 4:
                     line = [(column - x, row) for x in range(5)]
                     line_list.append([line, 0])
 
-
                 if row >= 4:
                     line = [(column, row - x) for x in range(5)]
                     line_list.append([line, 0])
-
-
-                if row >= 4 and column >=4:
+ 
+                if row >= 4 and column >= 4:
                     line = [(column - x, row - x) for x in range(5)]
                     line_list.append([line, 0])
-                    line = [(column -4 + x, row - x) for x in range(5)]
+                    line = [(column - 4 + x, row - x) for x in range(5)]
                     line_list.append([line, 0])
 
         return line_list
-
 
 
 def main():
     piskvorky = Piskvorky(VELIKOST)
     n_cnn_players = 10
     cnn_players = []
-    episodes = 100
-    #waiting = list(range(n_cnn_players))
+    episodes = 1000
+    # waiting = list(range(n_cnn_players))
     teacher = TeacherPlayer(piskvorky.size)
-    player = CNNPLayer(VELIKOST, memory_size=100, name=str(184), load=False, to_train=True,pretraining= True,
-                       block_training=teacher.reward)
+    player = CNNPLayer(VELIKOST, memory_size=500, name=str(184), preset=True,load=True, to_train=True, pretraining=True,
+                       block_training=teacher.reward, double_dqn=True, minimax_prob=0, random_move_prob=0.9999, random_move_decrease=0.99997)
     counter = 0
-    for i in range(100):
-        #pick = random.sample(waiting, k=1)
-        #print(pick)
-        print("episode",counter)
+    rewards_history = []
+    for i in range(episodes):
+        # pick = random.sample(waiting, k=1)
+        # print(pick)
+        print("episode", counter)
         if counter == 6:
             player.pretraining = False
-        train_blocking(piskvorky, player,teacher)
-        counter+=1
+        rewards = train_blocking(piskvorky, player, teacher)
+
+        rewards_history.append(rewards)
+        counter += 1
+
+    plot(range(len(rewards_history)), rewards_history)
+    show()
 
 
-def train_blocking(game: Piskvorky,player: CNNPLayer, teacher: TeacherPlayer,):
-
+def train_blocking(game: Piskvorky, player: CNNPLayer, teacher: TeacherPlayer, ):
     n_games = 100
+    rewards = 0
     for i in range(n_games):
         game.reset()
         print(i)
         turn = teacher
         waiting = player
-        teacher.new_game(game.X,game.O)
-        player.new_game(game.O,game.X)
+        teacher.new_game(game.X, game.O)
+        player.new_game(game.O, game.X)
         move = None
         while True:
             move = turn.move(game, move)
@@ -119,9 +125,10 @@ def train_blocking(game: Piskvorky,player: CNNPLayer, teacher: TeacherPlayer,):
                 vysledek = game.end(move)
                 break
             turn, waiting = waiting, turn
-
-        player.train(vysledek, epochs=10, n_recalls=60)
+        player.train(vysledek, epochs=10, n_recalls=90)
+        rewards += sum(player.curr_match_reward_log)
     player.save_model()
+    return rewards
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-from bot.CNNPlayer import CNNetwork
+from bot.Networks import CNNetwork_preset
 import torch
 import numpy as np
 from copy import deepcopy
@@ -45,7 +45,7 @@ class CombPlayer():
         value = np.argmax(q_values.detach().numpy())
         return value
     def loadmodel(self, load):
-        model = CNNetwork(size=self.size)
+        model = CNNetwork_preset(size=self.size)
         model.load_state_dict(torch.load(load))
         model.eval()
         return model

@@ -7,50 +7,12 @@ import numpy as np
 import math
 from bot.mmplayer import minimax, listofpossiblemoves
 from copy import deepcopy, copy
-from torch import Tensor
+from bot.Networks import CNNetwork_preset,CNNetwork_big
 
 
 def heuristic(game,move):
     return 0
 
-class CNNetwork(torch.nn.Module):
-
-    def __init__(self, size):
-        self.size = size
-        super(CNNetwork, self).__init__()
-        self.block1 = nn.Sequential(nn.Conv2d(2, 128, kernel_size=3, stride=1, padding=1),
-                                    nn.ReLU(),
-                                    )
-        self.block2 = nn.Sequential(nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
-                                    nn.ReLU(),
-                                    )
-        self.block3 = nn.Sequential(nn.Conv2d(128, 64, kernel_size=3, stride=1, padding=1),
-                                    nn.ReLU(),
-                                    )
-
-        self.linear1 = nn.Linear(4096, 1024)
-        self.linear2 = nn.Linear(1024, 512)
-        self.linear3 = nn.Linear(512, self.size ** 2)
-        self.activation = nn.Tanh()
-        self.softmax = nn.Softmax(-1)
-
-    def forward(self, x):
-        x = self.block1(x)
-        x = self.block2(x)
-        x = self.block3(x)
-        x = x.flatten(start_dim=1)
-        x = self.linear1(x)
-        x = self.activation(x)
-        x = self.linear2(x)
-        x = self.activation(x)
-        q_values = self.linear3(x)
-        return q_values
-
-    def probs(self, x):
-        self.eval()
-        with torch.no_grad():
-            q_values = self.forward(x)
-            return self.softmax(q_values)[0], q_values[0]
 
 
 class Match():
@@ -74,7 +36,7 @@ class Match():
             self.q_values_log.append(q_values)
             if e != 0:
                 self.next_max_log.append(q_values[self.move_log[e]])
-        self.next_max_log.append(self.final_reward)
+        self.next_max_log.append(0)
 
 
 class CNNMemory():
@@ -136,7 +98,8 @@ class StateTargetValuesDataset(Dataset):
 
 class CNNPLayer():
 
-    def __init__(self, size, name,memory_size, to_train=False, load=False, block_training = False, pretraining = False, double_dqn = False):
+    def __init__(self, size, name,memory_size,preset = False, to_train=False, load=False, block_training = False, pretraining = False,
+                 double_dqn = False, random_move_prob = 0.9999, random_move_decrease = 0.9997, minimax_prob = 0.2):
        # self.last_seen = None
         self.side = None
         self.size = size
@@ -146,7 +109,12 @@ class CNNPLayer():
         self.EMPTY = 0
         self.block_training = block_training
         # model things
-        self.model = CNNetwork(size=self.size)
+        if preset:
+            self.model = CNNetwork_preset(size=self.size)
+        else:
+            self.model = CNNetwork_big(size=self.size)
+
+
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = nn.MSELoss()
         if load:
@@ -166,8 +134,9 @@ class CNNPLayer():
         self.loss_value = -1.0
         # exploitation vs exploration
         self.random_move_increase=1.1# if player lost try to explore mroe
-        self.random_move_prob = 0.9999
-        self.random_move_decrease = 0.99997
+        self.random_move_prob = random_move_prob
+        self.random_move_decrease = random_move_decrease
+        self.minimax_prob = minimax_prob
         self.pretraining = pretraining
         if not self.to_train:
             self.random_move_prob = 0
@@ -240,8 +209,11 @@ class CNNPLayer():
         rand_n = np.random.rand(1)
         if self.to_train and (rand_n < self.random_move_prob or self.pretraining):
             move = random.choice(listofpossiblemoves(game))
-            #move = self.minimax_move(game)
+            rand_n2 = np.random.rand(1)
+            if rand_n2 < self.minimax_prob and not self.pretraining:
+                move = self.minimax_move(game)
         else:
+            print("real move")
             move = np.argmax(probs.numpy())
             move = game.indextoxy(move)
 
@@ -289,8 +261,8 @@ class CNNPLayer():
         if n_recalls < 0:
             n_recalls = 0
 
-        self.curr_match_next_max_log.append(reward)
-        self.curr_match_reward_log[-1] = 0
+        self.curr_match_next_max_log.append(0)
+        self.curr_match_reward_log[-1] = reward
 
         encoded_board = [self.encode(x) for x in self.curr_match_board_log]
         this_match = Match(encoded_board, self.curr_match_move_log, self.curr_match_reward_log, reward)
@@ -303,7 +275,7 @@ class CNNPLayer():
         if not self.pretraining:
             games_from_memory = self.memory.get_random_matches(n_recalls)
 
-            self.train_on_matches(games_from_memory, epochs=15)
+            self.train_on_matches(games_from_memory, epochs=epochs)
 
         if self.to_train and not self.pretraining:
             self.random_move_prob *= self.random_move_decrease
