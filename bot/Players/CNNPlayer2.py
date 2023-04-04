@@ -4,7 +4,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from bot.Players.Minimax_player import minimax, list_of_possible_moves
-from copy import copy
+from copy import copy,deepcopy
 from bot.Networks import CNNetwork_preset, CNNetwork_big
 from bot.Players.Player_abstract_class import Player
 
@@ -24,7 +24,8 @@ class CNNCache:
     def add_states(self, states: list, final_reward: float):
         for index_old, state in enumerate(self.states_log):
             for index_new, new_state in enumerate(states):
-                if torch.eq(new_state, state):
+                #print(new_state, state)
+                if torch.all(torch.eq(new_state, state) == True):
                     self.rewards_log[index_old].append(final_reward)
                     states.pop(index_new)
 
@@ -43,15 +44,15 @@ class CNNCache:
     @staticmethod
     def get_possible_states(state):
         output = []
-
-        for x, row in enumerate(state[0]):
+        #print(state.size())
+        for x, row in enumerate(state[0][0]):
             for y, space in enumerate(row):
-                if space == 0:
-                    if state[1, y, x] == 0:
-                        new_state = copy(state)
-                        new_state[0, y, x] = 1
+                if space.item() <= 0.001:
+                    if state[0,1, y, x] == 0:
+                        new_state = deepcopy(state)
+                        new_state[0,0, y, x] = 1
                         output.append((new_state, (y, x)))
-        print(output)
+        #print(output)
         return output
 
     def compute_state_target_matrix(self, state):
@@ -62,7 +63,7 @@ class CNNCache:
         next_states = self.get_possible_states(state)
         for index_old, old_state in enumerate(self.states_log):
             for next_state, move in next_states:
-                if torch.eq(next_state, old_state):
+                if torch.all(torch.eq(next_state, old_state) == True):
                     approximation = self.values[index_old]
                     target_matrix[move[1], move[0]] = approximation
 
@@ -101,17 +102,17 @@ class CNNPlayer_proximal(Player):
         super().__init__(name, to_train)
         self.side = None
         self.size = size
-        self.name = "CNN " + name + " " + str(size)
+        self.name = "CNN proximal " + name + " " + str(size)
 
         self.EMPTY = 0
 
         # model things
         if preset:
             self.model = CNNetwork_preset(size=self.size)
-            self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
+            self.file = ".\\NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
         else:
             self.model = CNNetwork_big(size=self.size)
-            self.file = "NNs\\" + self.name.replace(" ", "-") + ".nn"
+            self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = nn.MSELoss()
@@ -183,7 +184,7 @@ class CNNPlayer_proximal(Player):
                 # y = y.view(-1, 1)
 
                 loss = self.loss_fn(y_hat, y)
-                print(loss)
+                #print(loss)
                 # Backprop
                 self.optim.zero_grad()
                 loss.backward()

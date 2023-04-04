@@ -108,10 +108,10 @@ class CNNPLayer():
         # model things
         if preset:
             self.model = CNNetwork_preset(size=self.size)
-            self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
+            self.file = ".\\NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
         else:
             self.model = CNNetwork_big(size=self.size)
-            self.file = "NNs\\" + self.name.replace(" ", "-") + ".nn"
+            self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = nn.MSELoss()
