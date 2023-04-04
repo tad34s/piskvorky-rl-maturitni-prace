@@ -1,10 +1,8 @@
 import random
-import math
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-import math
 from bot.mmplayer import minimax, listofpossiblemoves
 from copy import deepcopy, copy
 from bot.Networks import CNNetwork_preset, CNNetwork_big
@@ -14,28 +12,69 @@ def heuristic(game, move):
     return 0
 
 
-class CNNCache():
+class CNNCache:
 
-    def __init__(self):
+    def __init__(self, game_size):
         self.states_log = []
         self.rewards_log = []
-    def add_states(self, states: torch.Tensor, final_reward: float):
+        self.values = None
+        self.game_size = game_size
+
+    def add_states(self, states: list, final_reward: float):
         for index_old, state in enumerate(self.states_log):
             for index_new, new_state in enumerate(states):
-                if torch.eq(new_state,state):
+                if torch.eq(new_state, state):
                     self.rewards_log[index_old].append(final_reward)
                     states.pop(index_new)
 
         for new_state in states:
             self.states_log.append(new_state)
             self.rewards_log.append([final_reward])
+
     def __len__(self):
         return len(self.states_log)
 
-    def get_states_and_values(self):
-        # computes the value of the state as the avarage of all its observed final rewards
-        values = [sum(x)/len(x) for x in self.rewards_log]
-        return self.states_log, values
+    def get_all_statevalues(self):
+        # computes the value of the state as the average of all its observed final rewards
+        values = [sum(x) / len(x) for x in self.rewards_log]
+        return values
+
+    @staticmethod
+    def get_possible_states(state):
+        output = []
+
+        for x, row in enumerate(state[0]):
+            for y, space in enumerate(row):
+                if space == 0:
+                    if state[1, y, x] == 0:
+                        new_state = copy(state)
+                        new_state[0, y, x] = 1
+                        output.append((new_state, (y, x)))
+        print(output)
+        return output
+
+    def compute_state_target_matrix(self, state):
+        # creates the target_matrix for the model to learn from
+        target_matrix = np.empty((self.game_size, self.game_size))
+        target_matrix[:] = np.nan
+
+        next_states = self.get_possible_states(state)
+        for index_old, old_state in enumerate(self.states_log):
+            for next_state, move in next_states:
+                if torch.eq(next_state, old_state):
+                    approximation = self.values[index_old]
+                    target_matrix[move[1], move[0]] = approximation
+
+        return target_matrix
+
+    def get_states_targets(self):
+        targets = []
+        self.values = self.get_all_statevalues()
+        for state in self.states_log:
+            targets.append(self.compute_state_target_matrix(state))
+
+        return self.states_log, targets
+
 
 class StateTargetValuesDataset(Dataset):
 
@@ -52,7 +91,7 @@ class StateTargetValuesDataset(Dataset):
         return self.states[index], self.targets[index]
 
 
-class CNNPlayer_proximal():
+class CNNPlayer_proximal:
 
     def __init__(self, size, name, preset=False, to_train=False, load=False, pretraining=False,
                  double_dqn=False, random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
@@ -61,19 +100,21 @@ class CNNPlayer_proximal():
         self.size = size
         self.to_train = to_train
         self.name = "CNN " + name + " " + str(size)
-        self.file = "NNs\\" + self.name.replace(" ", "-") + ".nn"
+
         self.EMPTY = 0
 
         # model things
         if preset:
             self.model = CNNetwork_preset(size=self.size)
+            self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
         else:
             self.model = CNNetwork_big(size=self.size)
+            self.file = "NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = nn.MSELoss()
         if load:
-            if type(load) == type(""):
+            if isinstance(load, str):
                 self.model.load_state_dict(torch.load(load))
             else:
                 self.model.load_state_dict(torch.load(self.file))
@@ -82,13 +123,13 @@ class CNNPlayer_proximal():
         self.old_network = None
         self.double_dqn = double_dqn
 
-        # reinforcemnt learning params
+        # reinforcement learning params
         self.reward_discount = 0.99
         self.win_value = 1.0
         self.draw_value = 0.0
         self.loss_value = -1.0
         # exploitation vs exploration
-        self.random_move_increase = 1.1  # if player lost try to explore mroe
+        self.random_move_increase = 1.1  # if player lost try to explore more
         self.random_move_prob = random_move_prob
         self.random_move_decrease = random_move_decrease
         self.minimax_prob = minimax_prob
@@ -97,13 +138,8 @@ class CNNPlayer_proximal():
             self.random_move_prob = 0
 
         # logs
-        self.curr_match_board_log = []
-        self.curr_match_move_log = []
-        self.curr_match_next_max_log = []  # the q value of the next move
-        self.curr_match_values_log = []  # log of the q values generated for the respective baord
-        self.curr_match_reward_log = []  # log of the rewards generated by the moves
-        self.memory = CNNCache()
-        print(self.memory.size)
+        self.match_state_log = []
+        self.cache = CNNCache(size)
 
     def encode(self, state):
         nparray = np.array([
@@ -117,24 +153,50 @@ class CNNPlayer_proximal():
         print(self.random_move_prob)
         self.side = side
         self.wait = other
-        self.curr_match_board_log = []  # not encoded history of board states
-        self.curr_match_move_log = []
-        self.curr_match_next_max_log = []  # the q value of the next move
-        self.curr_match_values_log = []  # log of the q values generated for the respective baord
-        self.curr_match_reward_log = []  # log of the rewards generated by the moves
+        self.match_state_log = []
 
-    def train(self):
+    def game_end(self, result):
+        if result == self.side:
+            reward = self.win_value
+        elif result == self.wait:
+            reward = self.loss_value
+        else:
+            reward = self.draw_value
+
+        self.cache.add_states(self.match_state_log, reward)
+
+    def train(self, epochs):
+
+        X, y = self.cache.get_states_targets()
+        dataset = StateTargetValuesDataset(X, y)
+        dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+
+        for epoch in range(epochs):
+
+            for batch in dataloader:
+                # We run the training step with the recorded inputs and new Q value targets.
+                X, y = batch
+                X = X.view((-1, 2, 8, 8))
+                y_hat = self.model(X)
+                # y = y.view(-1, 1)
+
+                loss = self.loss_fn(y_hat, y)
+                print(loss)
+                # Backprop
+                self.optim.zero_grad()
+                loss.backward()
+                self.optim.step()
+
+        if self.to_train and not self.pretraining:
+            self.random_move_prob *= self.random_move_decrease
 
     def move(self, game, enemy_move):
 
-        if self.to_train:
-            self.curr_match_board_log.append(game.state.copy())
-            # calculate punishemnt
-            if not self.block_training:
-                if self.curr_match_reward_log:
-                    self.curr_match_reward_log[-1] -= self.reward(game, enemy_move)
-
         input = self.encode(game.state)
+
+        if self.to_train:
+            self.match_state_log.append(input)
+
         if self.double_dqn and self.old_network:
             probs, q_values = self.old_network.probs(input)
         else:
@@ -159,107 +221,12 @@ class CNNPlayer_proximal():
             move = game.indextoxy(move)
 
         game.move(move)
-
-        # add reward
-        if self.to_train:
-            if len(self.curr_match_move_log) > 0:
-                self.curr_match_next_max_log.append(q_values[np.argmax(probs.numpy())])
-            self.curr_match_move_log.append(game.xytoindex(move))
-            self.curr_match_values_log.append(q_values)
-
-            if self.block_training:
-                reward = self.block_training(game, move)
-                self.curr_match_reward_log.append(reward)
-            else:
-                self.curr_match_reward_log.append(self.reward(game, move))
-
         return move
-
-    def reward(self, game, move):
-
-        odmena = 0
-        points = [game.leftdiagpoints(move[0], move[1]), game.rightdiagpoints(move[0], move[1]),
-                  game.rowpoints(move[0], move[1]), game.columnpoints(move[0], move[1])]
-        points.sort(reverse=True)
-        for point in points:
-            if odmena == 0:
-                odmena += point ** 2 / 10
-            else:
-                odmena += point ** 2 / 40
-
-        return odmena
-
-    def train(self, vysledek, epochs, n_recalls=0):
-        if vysledek == self.side:
-            reward = self.win_value
-        elif vysledek == "0":
-            reward = self.draw_value
-        else:
-            reward = self.loss_value
-
-        if n_recalls < 0:
-            n_recalls = 0
-
-        self.curr_match_next_max_log.append(0)
-        self.curr_match_reward_log[-1] = reward
-
-        encoded_board = [self.encode(x) for x in self.curr_match_board_log]
-        this_match = Match(encoded_board, self.curr_match_move_log, self.curr_match_reward_log, reward)
-        # if lost last game and now won, i want the nn to really remember how to win
-
-        # self.train_on_matches([this_match], epochs)
-        self.memory.add_match(deepcopy(this_match))
-
-        if not self.pretraining:
-            games_from_memory = self.memory.get_random_matches(n_recalls)
-
-            self.train_on_matches(games_from_memory, epochs=epochs)
-
-        if self.to_train and not self.pretraining:
-            self.random_move_prob *= self.random_move_decrease
 
     def minimax_move(self, game):
         print("minimax move")
         move = minimax(game, 3, heuristic)
         return move
 
-    def train_on_matches(self, matches: list, epochs):
-
-        self.old_network = deepcopy(self.model)
-
-        # trains on the game loaded in memory
-        if not matches:
-            return
-        y = []
-        X = []
-        for match in matches:
-            match.generate_values(self.model)
-            targets = self.calculate_targets(match)
-            for target in targets:
-                y.append(target)
-            # y = torch.cat([y, self.calculate_targets(match)])
-            for board in match.encoded_board_log:
-                X.append(board)
-            # X = torch.cat([X, self.encode(board)])
-        dataset = StateTargetValuesDataset(X, y)
-        dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
-        paramdata = []
-        for epoch in range(epochs):
-
-            for batch in dataloader:
-                # We run the training step with the recorded inputs and new Q value targets.
-                X, y = batch
-                X = X.view((-1, 2, 8, 8))
-                y_hat = self.model(X)
-                # y = y.view(-1, 1)
-
-                loss = self.loss_fn(y_hat, y)
-
-                # Backprop
-                self.optim.zero_grad()
-                loss.backward()
-                self.optim.step()
-
     def save_model(self):
         torch.save(self.model.state_dict(), self.file)  # .replace(" ","-"))
-
