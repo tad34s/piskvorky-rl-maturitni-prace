@@ -1,14 +1,15 @@
 import numpy as np
 import random
+from variables import EMPTY, X, O
 
 
 class Piskvorky():
 
     def __init__(self, size):
         self.size = size
-        self.EMPTY = 0
-        self.X = 1
-        self.O = 2
+        self.EMPTY = EMPTY
+        self.X = X
+        self.O = O
         self.turn = self.X
         self.wait = self.O
         self.state = np.zeros((self.size, self.size), dtype=np.int8)
