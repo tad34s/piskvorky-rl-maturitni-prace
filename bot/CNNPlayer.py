@@ -7,18 +7,17 @@ import numpy as np
 import math
 from bot.mmplayer import minimax, listofpossiblemoves
 from copy import deepcopy, copy
-from bot.Networks import CNNetwork_preset,CNNetwork_big
+from bot.Networks import CNNetwork_preset, CNNetwork_big
 
 
-def heuristic(game,move):
+def heuristic(game, move):
     return 0
-
 
 
 class Match():
 
     def __init__(self, board_log, move_log, rewards_log, final_reward):
-        #self.last_seen = None
+        # self.last_seen = None
         self.encoded_board_log = board_log
         self.move_log = move_log
         self.rewards_log = rewards_log
@@ -43,43 +42,44 @@ class CNNMemory():
 
     def __init__(self, size: int):
         self.size = size
-        self.games_won=[]
-        self.games_drawn=[]
-        self.games_lost=[]
+        self.games_won = []
+        self.games_drawn = []
+        self.games_lost = []
 
     def add_match(self, match: Match):
 
         if match.final_reward > 0:
-            self.add_match_to_list(self.games_won,match)
+            self.add_match_to_list(self.games_won, match)
         elif match.final_reward < 0:
-            self.add_match_to_list(self.games_lost,match)
+            self.add_match_to_list(self.games_lost, match)
         else:
-            self.add_match_to_list(self.games_drawn,match)
+            self.add_match_to_list(self.games_drawn, match)
 
-    def add_match_to_list(self,games:list,match:Match):
+    def add_match_to_list(self, games: list, match: Match):
         if len(games) >= self.size:
             games.pop(0)
         games.append(match)
 
     def __len__(self):
-        return len(self.games_won)+len(self.games_lost) +len(self.games_drawn)
+        return len(self.games_won) + len(self.games_lost) + len(self.games_drawn)
 
     def get_random_matches(self, n: int) -> list:
         if n > len(self):
             n = len(self)
         output = []
-        size = n//3
+        size = n // 3
         output.extend(self.sample(self.games_won, k=size))
         output.extend(self.sample(self.games_lost, k=size))
         output.extend(self.sample(self.games_drawn, k=size))
         return output
 
-    def sample(self,games:list,k:int):
+    def sample(self, games: list, k: int):
         if k > len(games):
             output = games
         else:
             output = random.sample(games, k=k)
         return output
+
 
 class StateTargetValuesDataset(Dataset):
 
@@ -98,22 +98,22 @@ class StateTargetValuesDataset(Dataset):
 
 class CNNPLayer():
 
-    def __init__(self, size, name,memory_size,preset = False, to_train=False, load=False, block_training = False, pretraining = False,
-                 double_dqn = False, random_move_prob = 0.9999, random_move_decrease = 0.9997, minimax_prob = 0.2):
-       # self.last_seen = None
+    def __init__(self, size, name, memory_size, preset=False, to_train=False, load=False, block_training=False,
+                 pretraining=False,
+                 double_dqn=False, random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
+        # self.last_seen = None
         self.side = None
         self.size = size
         self.to_train = to_train
         self.name = "CNN " + name + " " + str(size)
-        self.file = "NNs\\" + self.name.replace(" ","-") + ".nn"
-        self.EMPTY = 0
         self.block_training = block_training
         # model things
         if preset:
             self.model = CNNetwork_preset(size=self.size)
+            self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
         else:
             self.model = CNNetwork_big(size=self.size)
-
+            self.file = "NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = nn.MSELoss()
@@ -133,7 +133,7 @@ class CNNPLayer():
         self.draw_value = 0.0
         self.loss_value = -1.0
         # exploitation vs exploration
-        self.random_move_increase=1.1# if player lost try to explore mroe
+        self.random_move_increase = 1.1  # if player lost try to explore mroe
         self.random_move_prob = random_move_prob
         self.random_move_decrease = random_move_decrease
         self.minimax_prob = minimax_prob
@@ -179,9 +179,9 @@ class CNNPLayer():
             old = target[match.move_log[i]]
             # change the value of the move made to the q value of the state it led to
             target[match.move_log[i]] = self.reward_discount * match.next_max_log[i] + match.rewards_log[i]
-            #print(target[match.move_log[i]])
+            # print(target[match.move_log[i]])
             targets.append(torch.tensor(target))
-            print(old,target[match.move_log[i]])
+            print(old, target[match.move_log[i]])
         return targets
 
     def move(self, game, enemy_move):
@@ -219,7 +219,6 @@ class CNNPLayer():
 
         game.move(move)
 
-
         # add reward
         if self.to_train:
             if len(self.curr_match_move_log) > 0:
@@ -228,11 +227,10 @@ class CNNPLayer():
             self.curr_match_values_log.append(q_values)
 
             if self.block_training:
-                reward = self.block_training(game,move)
+                reward = self.block_training(game, move)
                 self.curr_match_reward_log.append(reward)
             else:
                 self.curr_match_reward_log.append(self.reward(game, move))
-
 
         return move
 
@@ -268,8 +266,7 @@ class CNNPLayer():
         this_match = Match(encoded_board, self.curr_match_move_log, self.curr_match_reward_log, reward)
         # if lost last game and now won, i want the nn to really remember how to win
 
-
-        #self.train_on_matches([this_match], epochs)
+        # self.train_on_matches([this_match], epochs)
         self.memory.add_match(deepcopy(this_match))
 
         if not self.pretraining:
@@ -282,13 +279,12 @@ class CNNPLayer():
 
     def minimax_move(self, game):
         print("minimax move")
-        move = minimax(game, 3,heuristic)
+        move = minimax(game, 3, heuristic)
         return move
 
     def train_on_matches(self, matches: list, epochs):
 
         self.old_network = deepcopy(self.model)
-        
 
         # trains on the game loaded in memory
         if not matches:
@@ -324,5 +320,4 @@ class CNNPLayer():
                 self.optim.step()
 
     def save_model(self):
-        torch.save(self.model.state_dict(), self.file )#.replace(" ","-"))
-
+        torch.save(self.model.state_dict(), self.file)  # .replace(" ","-"))
