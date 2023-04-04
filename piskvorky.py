@@ -27,47 +27,34 @@ class Piskvorky():
             string += "\n"
         return string
 
-    def reset(self):  # resets boarc
+    def reset(self):  # resets board
         self.state = np.zeros((self.size, self.size), dtype=np.int8)
         self.turn = self.X
         self.wait = self.O
 
-    def switchturn(self):
+    def switch_turn(self):
         self.turn, self.wait = self.wait, self.turn
 
-    def indextoxy(self, index):
+    def index_to_xy(self, index):
         x = index % self.size
         y = index // self.size
         return x, y
 
-    def xytoindex(self, xy):
+    def xy_to_index(self, xy):
         x, y = xy
         index = self.size * y + x
         return index
 
     def move(self, xy):
         x, y = xy
-        if not self.islegal(xy):
+        if not self.is_legal(xy):
             raise Exception("Illegal move")
 
         self.state[y, x] = self.turn
 
-        self.switchturn()
+        self.switch_turn()
 
-    def listofpossiblemoves(self):
-        movelist = []
-
-        for y, i in enumerate(self.state):
-            for x, j in enumerate(i):
-                if j == self.EMPTY:
-                    movelist.append((x, y))
-        return movelist
-
-    def random_move(self):
-
-        return random.choice(self.listofpossiblemoves())
-
-    def islegal(self, xy):
+    def is_legal(self, xy):
         x, y = xy
 
         if not 0 <= x < self.size:
@@ -81,12 +68,12 @@ class Piskvorky():
 
         return True
 
-    def insertempty(self, xy):
+    def insert_empty(self, xy):
         x, y = xy
         self.state[y, x] = self.EMPTY
-        self.switchturn()
+        self.switch_turn()
 
-    def leftdiagpoints(self, x, y):
+    def left_diag_points(self, x, y):
 
         points = 1
 
@@ -106,7 +93,7 @@ class Piskvorky():
 
         return points
 
-    def rightdiagpoints(self, x, y):
+    def right_diag_points(self, x, y):
 
         points = 1
 
@@ -126,7 +113,7 @@ class Piskvorky():
 
         return points
 
-    def rowpoints(self, x, y):
+    def row_points(self, x, y):
 
         points = 1
 
@@ -147,7 +134,7 @@ class Piskvorky():
 
         return points
 
-    def columnpoints(self, x, y):
+    def column_points(self, x, y):
 
         points = 1
 
@@ -180,11 +167,11 @@ class Piskvorky():
 
     def end(self, xy):
         x, y = xy
-        rada = self.rowpoints(x, y)
-        sloupec = self.columnpoints(x, y)
-        levadiagonala = self.leftdiagpoints(x, y)
-        pravadiagonala = self.rightdiagpoints(x, y)
-        if pravadiagonala >= 5 or levadiagonala >= 5 or rada >= 5 or sloupec >= 5:
+        row = self.row_points(x, y)
+        column = self.column_points(x, y)
+        left_diag = self.left_diag_points(x, y)
+        right_diag = self.right_diag_points(x, y)
+        if right_diag >= 5 or left_diag >= 5 or row >= 5 or column >= 5:
             return self.wait
 
         elif np.count_nonzero(self.state == self.EMPTY) == 0:
@@ -192,3 +179,14 @@ class Piskvorky():
             return "0"
         else:
             return False
+
+
+def list_of_possible_moves(game):
+    move_list = []
+
+    for y, i in enumerate(game.state):
+        for x, j in enumerate(i):
+            if j == game.EMPTY:
+                move_list.append((x, y))
+
+    return move_list

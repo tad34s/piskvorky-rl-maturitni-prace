@@ -2,7 +2,7 @@ from bot.Networks import CNNetwork_preset
 import torch
 import numpy as np
 from copy import deepcopy
-from bot.mmplayer import minimax
+from bot.Players.Minimax_player import minimax
 
 class CombPlayer():
 

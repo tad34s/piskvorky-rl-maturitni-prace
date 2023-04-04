@@ -3,9 +3,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
-from bot.mmplayer import minimax, listofpossiblemoves
-from copy import deepcopy, copy
+from bot.Players.Minimax_player import minimax, list_of_possible_moves
+from copy import copy
 from bot.Networks import CNNetwork_preset, CNNetwork_big
+from bot.Players.Player_abstract_class import Player
 
 
 def heuristic(game, move):
@@ -91,14 +92,15 @@ class StateTargetValuesDataset(Dataset):
         return self.states[index], self.targets[index]
 
 
-class CNNPlayer_proximal:
+class CNNPlayer_proximal(Player):
 
-    def __init__(self, size, name, preset=False, to_train=False, load=False, pretraining=False,
-                 double_dqn=False, random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
+    def __init__(self, size, name, preset=False, to_train=False, load=False, pretraining=False, double_dqn=False,
+                 random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
         # self.last_seen = None
+
+        super().__init__(name, to_train)
         self.side = None
         self.size = size
-        self.to_train = to_train
         self.name = "CNN " + name + " " + str(size)
 
         self.EMPTY = 0
@@ -204,21 +206,21 @@ class CNNPlayer_proximal:
         print(q_values)
         q_values = np.copy(q_values)
         for index, value in enumerate(q_values):
-            if not game.islegal(game.indextoxy(index)):
+            if not game.is_legal(game.index_to_xy(index)):
                 probs[index] = -1
             elif probs[index] < 0:
                 probs[index] = 0.0
 
         rand_n = np.random.rand(1)
         if self.to_train and (rand_n < self.random_move_prob or self.pretraining):
-            move = random.choice(listofpossiblemoves(game))
+            move = random.choice(list_of_possible_moves(game))
             rand_n2 = np.random.rand(1)
             if rand_n2 < self.minimax_prob and not self.pretraining:
                 move = self.minimax_move(game)
         else:
             print("real move")
             move = np.argmax(probs.numpy())
-            move = game.indextoxy(move)
+            move = game.index_to_xy(move)
 
         game.move(move)
         return move

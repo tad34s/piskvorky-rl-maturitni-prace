@@ -1,15 +1,17 @@
 import random
+from bot.Players.Player_abstract_class import Player
+from piskvorky import list_of_possible_moves
 
-
-class MinimaxPlayer():
+class MinimaxPlayer(Player):
 
     def __init__(self, depth, name):
+        super().__init__(name)
         self.depth = depth
         self.name = "Minim " + name
         self.to_train = False
         self.cache = {}
 
-    def newgame(self, side, other):
+    def new_game(self, side, other):
         self.cache = {}
         self.side = side
         self.other = other
@@ -33,10 +35,10 @@ class MinimaxPlayer():
 
 
 def heuristic(game, move):
-    row =game.rowpoints(move[0], move[1])
-    column =game.columnpoints(move[0], move[1])
-    leftdiag = game.leftdiagpoints(move[0], move[1])
-    rightdiag = game.rightdiagpoints(move[0], move[1])
+    row = game.row_points(move[0], move[1])
+    column = game.column_points(move[0], move[1])
+    leftdiag = game.left_diag_points(move[0], move[1])
+    rightdiag = game.right_diag_points(move[0], move[1])
 
     value = max((row,column,leftdiag,rightdiag))
     value = value / 6
@@ -50,7 +52,7 @@ def minimax(game, depth,heuristic):
         maxx = None
         maxy = None
 
-        for mov in listofpossiblemoves(game):
+        for mov in list_of_possible_moves(game):
 
             game.move(mov)
 
@@ -60,22 +62,22 @@ def minimax(game, depth,heuristic):
             # pridat rozhodovani podle heuristiky
             if depth > maxdepth:
                 value = heuristic(game, mov)
-                game.insertempty(mov)
+                game.insert_empty(mov)
                 depth -= 1
                 return value, mov[0], mov[1]
 
             if game.end(mov) != "0" and game.end(mov):
-                game.insertempty(mov)
+                game.insert_empty(mov)
                 depth -= 1
                 return 10, mov[0], mov[1]
-            if not listofpossiblemoves(game):
-                game.insertempty(mov)
+            if not list_of_possible_moves(game):
+                game.insert_empty(mov)
                 depth -= 1
                 return 0, mov[0], mov[1]
 
             val, x, y = minn(alpha, beta, depth, maxdepth)
 
-            game.insertempty(mov)
+            game.insert_empty(mov)
 
             if val > maxv:
                 maxv = val
@@ -97,7 +99,7 @@ def minimax(game, depth,heuristic):
         minx = None
         miny = None
 
-        for mov in listofpossiblemoves(game):
+        for mov in list_of_possible_moves(game):
             game.move(mov)
 
             depth += 1
@@ -106,21 +108,21 @@ def minimax(game, depth,heuristic):
             if depth > maxdepth:
                 if depth > maxdepth:
                     value = heuristic(game, mov)
-                    game.insertempty(mov)
+                    game.insert_empty(mov)
                     depth -= 1
                     return value *(-1), mov[0], mov[1]
 
             if game.end(mov) != "0" and game.end(mov):
-                game.insertempty(mov)
+                game.insert_empty(mov)
                 depth -= 1
                 return -10, mov[0], mov[1]
-            if not listofpossiblemoves(game):
-                game.insertempty(mov)
+            if not list_of_possible_moves(game):
+                game.insert_empty(mov)
                 depth -= 1
                 return 0, mov[0], mov[1]
 
             val, x, y = maxx(alpha, beta, depth, maxdepth)
-            game.insertempty(mov)
+            game.insert_empty(mov)
 
             if val < minv:
                 minv = val
@@ -141,18 +143,8 @@ def minimax(game, depth,heuristic):
     val, x, y = maxx(-200, 200, 0, depth)
 
     if val == 0:
-        print("lol")
-        return random.choice(listofpossiblemoves(game))
+        return random.choice(list_of_possible_moves(game))
 
     return x, y
 
 
-def listofpossiblemoves(game):
-    movelist = []
-
-    for y, i in enumerate(game.state):
-        for x, j in enumerate(i):
-            if j == game.EMPTY:
-                movelist.append((x, y))
-
-    return movelist

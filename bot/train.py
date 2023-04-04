@@ -1,14 +1,9 @@
 # Press the green button in the gutter to run the script.
 import random
-from typing import List, Any
 
 from piskvorky import Piskvorky
-from mmplayer import MinimaxPlayer
-from CNNPlayer import CNNPLayer
-import matplotlib.pyplot as plt
+from bot.Players.CNNPlayer import CNNPLayer
 from variables import VELIKOST
-from combinationplayer import CombPlayer
-from utils import displaystats
 
 
 def main():

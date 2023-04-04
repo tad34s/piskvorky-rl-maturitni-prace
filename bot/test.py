@@ -1,11 +1,9 @@
 # This is a sample Python script.
 from piskvorky import Piskvorky
 from variables import VELIKOST
-from uselplayer import UserPlayer
-from CNNPlayer import CNNPLayer
-from mmplayer import MinimaxPlayer
-from combinationplayer import CombPlayer
-from utils import displaystats
+from bot.Players.CNNPlayer import CNNPLayer
+from bot.Players.Minimax_player import MinimaxPlayer
+from utils import display_stats
 
 
 
@@ -62,7 +60,7 @@ def test(game, length, player1, player2):
     for i in range(length):
         log.append(play(game, player1, player2))
         player1,player2 = player2, player1
-    displaystats(log, player1.name, player2.name)
+    display_stats(log, player1.name, player2.name, )
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':

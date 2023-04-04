@@ -2,12 +2,8 @@ import pygame
 import sys
 from variables import VELIKOST
 from piskvorky import Piskvorky
-from bot.CNNPlayer import CNNPLayer
+from bot.Players.CNNPlayer import CNNPLayer
 import os
-from bot.mmplayer import MinimaxPlayer
-from bot.combinationplayer import CombPlayer
-from time import sleep
-
 
 BLACK = (0, 0, 0)
 GRID_COLOR = (19, 20, 20)
