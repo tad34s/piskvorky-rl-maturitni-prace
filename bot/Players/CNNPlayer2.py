@@ -7,75 +7,87 @@ from bot.Players.Minimax_player import minimax, list_of_possible_moves
 from copy import copy,deepcopy
 from bot.Networks import CNNetwork_preset, CNNetwork_big
 from bot.Players.Player_abstract_class import Player
-
+import time
+from math import ceil
 
 def heuristic(game, move):
     return 0
+
+class GameState:
+
+    def __init__(self,state,final_reward,depth):
+        self.state = state
+        self.final_rewards = [final_reward]
+        self.next_states = []
+        self.depth = depth
+
+    def value(self):
+        return sum(self.final_rewards)/len(self.final_rewards)
 
 
 class CNNCache:
 
     def __init__(self, game_size):
-        self.states_log = []
-        self.rewards_log = []
-        self.values = None
         self.game_size = game_size
+        self.states_log = self.generate_empty_log()
+
+    def generate_empty_log(self):
+        return [ [] for x in range(ceil((self.game_size**2)/2))]
 
     def add_states(self, states: list, final_reward: float):
-        for index_old, state in enumerate(self.states_log):
-            for index_new, new_state in enumerate(states):
-                #print(new_state, state)
-                if torch.all(torch.eq(new_state, state) == True):
-                    self.rewards_log[index_old].append(final_reward)
-                    states.pop(index_new)
+        st = time.time()
+        last_found_index = None
 
-        for new_state in states:
-            self.states_log.append(new_state)
-            self.rewards_log.append([final_reward])
+        for depth, new_state in enumerate(states):
+            found = False
+            for index_logged, state_logged in enumerate(self.states_log[depth]):
+                if torch.all(torch.eq(new_state, state_logged.state)==True): # if state is already logged
+                    state_logged.final_rewards.append(final_reward) # add this reward to cache
+                    if depth != 0:# if its not the first state
+                        self.states_log[depth-1][last_found_index].next_states.append(index_logged) # add its index to the next_state array of the state before
+                    last_found_index = index_logged # remeber where we put the game state so we can add the to the next_state array next iteration
+                    found = True
 
+            if not found:
+                new_game_state = GameState(deepcopy(new_state), final_reward,depth)
+                self.states_log[depth].append(new_game_state)
+                if not last_found_index is None:
+                    self.states_log[depth-1][last_found_index].next_states.append(len(self.states_log[depth])-1)
+                last_found_index = len(self.states_log[depth])-1
+
+        et = time.time()
+        elapsed_time = et - st
+        print('Add_states: ', elapsed_time, 'seconds')
     def __len__(self):
         return len(self.states_log)
 
-    def get_all_statevalues(self):
-        # computes the value of the state as the average of all its observed final rewards
-        values = [sum(x) / len(x) for x in self.rewards_log]
-        return values
-
-    @staticmethod
-    def get_possible_states(state):
-        output = []
-        #print(state.size())
-        for x, row in enumerate(state[0][0]):
-            for y, space in enumerate(row):
-                if space.item() <= 0.001:
-                    if state[0,1, y, x] == 0:
-                        new_state = deepcopy(state)
-                        new_state[0,0, y, x] = 1
-                        output.append((new_state, (y, x)))
-        #print(output)
-        return output
-
-    def compute_state_target_matrix(self, state):
+    def compute_state_target_matrix(self, state:GameState):
         # creates the target_matrix for the model to learn from
-        target_matrix = np.empty((self.game_size, self.game_size))
-        target_matrix[:] = np.nan
+        target_matrix = torch.full((self.game_size,self.game_size),torch.nan,dtype=torch.float32)
 
-        next_states = self.get_possible_states(state)
-        for index_old, old_state in enumerate(self.states_log):
-            for next_state, move in next_states:
-                if torch.all(torch.eq(next_state, old_state) == True):
-                    approximation = self.values[index_old]
-                    target_matrix[move[1], move[0]] = approximation
+        for index_next_state in state.next_states:
+            next_state = self.states_log[state.depth+1][index_next_state]
+            index = (torch.eq(state.state[0,0],next_state.state[0,0])==False).nonzero()
+            target_matrix[index[0][0],index[0][1]] = next_state.value()
+            print(target_matrix)
 
-        return target_matrix
+        return target_matrix.flatten()
 
     def get_states_targets(self):
+        st = time.time()
         targets = []
-        self.values = self.get_all_statevalues()
-        for state in self.states_log:
+        all_game_states = [x for depth in self.states_log for x in depth]
+        for state in all_game_states:
             targets.append(self.compute_state_target_matrix(state))
+        et = time.time()
+        elapsed_time = et - st
+        print('Get states: ', elapsed_time, 'seconds')
+        states = [x.state for x in all_game_states]
+        return states, targets
 
-        return self.states_log, targets
+    def wipe(self):
+        self.states_log = self.generate_empty_log()
+
 
 
 class StateTargetValuesDataset(Dataset):
@@ -115,7 +127,7 @@ class CNNPlayer_proximal(Player):
             self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
-        self.loss_fn = nn.MSELoss()
+        self.loss_fn = CustomMSE()
         if load:
             if isinstance(load, str):
                 self.model.load_state_dict(torch.load(load))
@@ -165,8 +177,8 @@ class CNNPlayer_proximal(Player):
             reward = self.loss_value
         else:
             reward = self.draw_value
-
-        self.cache.add_states(self.match_state_log, reward)
+        if self.to_train:
+            self.cache.add_states(self.match_state_log, reward)
 
     def train(self, epochs):
 
@@ -181,17 +193,22 @@ class CNNPlayer_proximal(Player):
                 X, y = batch
                 X = X.view((-1, 2, 8, 8))
                 y_hat = self.model(X)
-                # y = y.view(-1, 1)
-
-                loss = self.loss_fn(y_hat, y)
-                #print(loss)
+                loss = my_loss(y_hat, y)
+                print("loss",loss)
                 # Backprop
                 self.optim.zero_grad()
                 loss.backward()
+                for param in self.model.parameters():
+                    print(param.grad)
+                    if param.grad is None:
+                        continue
+                    torch.nan_to_num_(param.grad)
                 self.optim.step()
 
         if self.to_train and not self.pretraining:
             self.random_move_prob *= self.random_move_decrease
+        self.cache.wipe()
+
 
     def move(self, game, enemy_move):
 
@@ -204,7 +221,8 @@ class CNNPlayer_proximal(Player):
             probs, q_values = self.old_network.probs(input)
         else:
             probs, q_values = self.model.probs(input)
-        print(q_values)
+
+        print("q_values\n",q_values)
         q_values = np.copy(q_values)
         for index, value in enumerate(q_values):
             if not game.is_legal(game.index_to_xy(index)):
@@ -233,3 +251,13 @@ class CNNPlayer_proximal(Player):
 
     def save_model(self):
         torch.save(self.model.state_dict(), self.file)  # .replace(" ","-"))
+
+class CustomMSE(nn.Module):
+    def __init__(self):
+        super(CustomMSE, self).__init__()
+
+    def forward(self, output, target):
+        return torch.nanmean((output - target)**2)
+
+def my_loss(output, target):
+    return torch.nanmean((output - target)**2)
