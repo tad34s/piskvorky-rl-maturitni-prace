@@ -154,9 +154,6 @@ class Piskvorky():
         return points
 
     def hash(self):
-        """
-
-        """
         res = 0
         for y, row in enumerate(self.state):
             for x, space in enumerate(row):

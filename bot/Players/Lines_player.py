@@ -25,11 +25,9 @@ class LinesPlayer(Player):
                 points.append(copy(line[1]))
                 self.line_list[index][1] = 0
         points.sort(reverse=True)
-        print(points)
         reward_points = sum([(x ** 2) / (30 * (i + 1))
                              for i, x in enumerate(points)])
         reward_points += self.game_length / 80
-        print(reward_points)
         return reward_points
 
     def move(self, game: Piskvorky, enemy_move: tuple):
@@ -53,7 +51,6 @@ class LinesPlayer(Player):
         for index, line in enumerate(self.line_list):
             if output in line[0]:
                 self.line_list[index][1] += 1
-                print(line)
         self.game_length += 1
         game.move(output)
         return output
