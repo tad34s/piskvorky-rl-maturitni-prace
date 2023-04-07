@@ -10,9 +10,9 @@ class CNNetwork_preset(torch.nn.Module):
         super(CNNetwork_preset, self).__init__()
         self.conv_5 = nn.Conv2d(2,8,kernel_size=5, stride=1, padding=2)
         self.conv_5.weight = torch.nn.Parameter(self.create_weights(5))
-        self.conv_train = nn.Conv2d(8,16,kernel_size=3, stride=1, padding=1)
-        self.linear1 = nn.Linear(1024,256)
-        self.linear2 = nn.Linear(256,  self.size ** 2)
+        self.conv_train1 = nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1)
+        self.conv_train2 = nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1)
+        self.linear = nn.Linear(1024,  self.size ** 2)
         self.conv_activation = nn.ReLU()
         self.activation = nn.Tanh()
         self.softmax = nn.Softmax(-1)
@@ -22,12 +22,12 @@ class CNNetwork_preset(torch.nn.Module):
         with torch.no_grad():
             x = self.conv_5(x)
             x = self.conv_activation(x)
-        x = self.conv_train(x)
+        x = self.conv_train1(x)
         x = self.conv_activation(x)
+        x = self.conv_train2(x)
         x = x.flatten(start_dim=1)
-        x = self.linear1(x)
-        x = self.activation(x)
-        q_values = self.linear2(x)
+        self.activation = nn.Tanh()
+        q_values = self.linear(x)
         return q_values
 
     def probs(self, x):

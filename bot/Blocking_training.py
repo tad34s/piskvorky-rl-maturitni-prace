@@ -12,7 +12,7 @@ def main():
     episodes = 1000
     # waiting = list(range(n_cnn_players))
     teacher = LinesPlayer(piskvorky.size,"teacher")
-    player = CNNPLayer(VELIKOST, memory_size=500, name=str(184), preset=True,load=True, to_train=True, pretraining=True,
+    player = CNNPLayer(VELIKOST, memory_size=500, name=str(184), preset=True,load=False, to_train=True, pretraining=True,
                        block_training=teacher.reward, double_dqn=True, minimax_prob=0, random_move_prob=0.9999, random_move_decrease=0.99997)
     counter = 0
     rewards_history = []

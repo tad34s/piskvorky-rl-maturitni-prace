@@ -81,9 +81,10 @@ class CNNMemory():
 
 class StateTargetValuesDataset(Dataset):
 
-    def __init__(self, states, targets):
+    def __init__(self, states, targets,moves):
         self.states = states
         self.targets = targets
+        self.moves = moves
         if len(states) != len(targets):
             raise ValueError
 
@@ -91,7 +92,7 @@ class StateTargetValuesDataset(Dataset):
         return len(self.states)
 
     def __getitem__(self, index):
-        return self.states[index], self.targets[index]
+        return self.states[index], self.targets[index], self.moves[index]
 
 
 class CNNPLayer():
@@ -114,7 +115,7 @@ class CNNPLayer():
             self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
-        self.loss_fn = nn.MSELoss()
+        self.loss_fn = CustomMSE()
         if load:
             if type(load) == type(""):
                 self.model.load_state_dict(torch.load(load))
@@ -289,6 +290,7 @@ class CNNPLayer():
             return
         y = []
         X = []
+        moves = []
         for match in matches:
             match.generate_values(self.model)
             targets = self.calculate_targets(match)
@@ -297,20 +299,21 @@ class CNNPLayer():
             # y = torch.cat([y, self.calculate_targets(match)])
             for board in match.encoded_board_log:
                 X.append(board)
+            for move in match.move_log:
+                moves.append(move)
             # X = torch.cat([X, self.encode(board)])
-        dataset = StateTargetValuesDataset(X, y)
+        dataset = StateTargetValuesDataset(X, y,moves)
         dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
-        paramdata = []
         for epoch in range(epochs):
 
             for batch in dataloader:
                 # We run the training step with the recorded inputs and new Q value targets.
-                X, y = batch
+                X, y,i = batch
                 X = X.view((-1, 2, 8, 8))
                 y_hat = self.model(X)
                 # y = y.view(-1, 1)
 
-                loss = self.loss_fn(y_hat, y)
+                loss = self.loss_fn(y_hat, y,i)
 
                 # Backprop
                 self.optim.zero_grad()
@@ -319,3 +322,14 @@ class CNNPLayer():
 
     def save_model(self):
         torch.save(self.model.state_dict(), self.file)  # .replace(" ","-"))
+
+
+class CustomMSE(nn.Module):
+    def __init__(self):
+        super(CustomMSE, self).__init__()
+
+    def forward(self, output, target,indexes):
+        cost_tensor = (output - target)**2
+        bselect = torch.arange(cost_tensor.size(0), dtype=torch.long)
+        cost_tensor[bselect, indexes[:]] *= 10
+        return torch.mean(cost_tensor)

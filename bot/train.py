@@ -12,7 +12,7 @@ def main():
     cnn_players = []
     waiting = list(range(n_cnn_players))
     for i in range(n_cnn_players):
-        cnn_players.append(CNNPLayer(VELIKOST,memory_size=50, name=str(i),load=True, to_train=True))
+        cnn_players.append(CNNPLayer(VELIKOST,memory_size=50, name="18",load=False, to_train=True,minimax_prob=0))
     while True:
 
         picks = random.sample(waiting, k=2)
@@ -59,7 +59,7 @@ def train(game, player1, player2):
         else:
             games_won.append(vysledek)
 
-        multiplier = 0
+        multiplier = 10
         if player1.to_train:
             player1.train(vysledek, epochs=20, n_recalls=multiplier)
         if player2.to_train:
