@@ -54,7 +54,7 @@ class CNNMemory():
             self.add_match_to_list(self.games_drawn, match)
 
     def add_match_to_list(self, games: list, match: Match):
-        if len(games) >= self.size:
+        if len(games) >= self.size//3:
             games.pop(0)
         games.append(match)
 
@@ -98,14 +98,15 @@ class StateTargetValuesDataset(Dataset):
 class CNNPLayer():
 
     def __init__(self, size, name, memory_size, preset=False, to_train=False, load=False, block_training=False,
-                 pretraining=False,
-                 double_dqn=False, random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
+                 pretraining=False, restrict_movement= False, double_dqn=False,
+                 random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
         # self.last_seen = None
         self.side = None
         self.size = size
         self.to_train = to_train
         self.name = "CNN " + name + " " + str(size)
         self.block_training = block_training
+        self.restrict_movement = restrict_movement
         # model things
         if preset:
             self.model = CNNetwork_preset(size=self.size)
@@ -203,6 +204,8 @@ class CNNPLayer():
             if not game.is_legal(game.index_to_xy(index)):
                 probs[index] = -1
             elif probs[index] < 0:
+                probs[index] = 0.0
+            if self.restrict_movement and not game.is_near(game.index_to_xy(index)):
                 probs[index] = 0.0
 
         rand_n = np.random.rand(1)

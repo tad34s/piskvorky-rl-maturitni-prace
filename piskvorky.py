@@ -57,17 +57,45 @@ class Piskvorky():
     def is_legal(self, xy):
         x, y = xy
 
-        if not 0 <= x < self.size:
-            print("Out of rows")
-            return False
-        if not 0 <= y < self.size:
-            print("Out of columns")
+        if not self.is_in_bounds(xy):
             return False
         if self.state[y, x] != self.EMPTY:
             return False
 
         return True
+    def is_in_bounds(self,xy):
+        x, y = xy
 
+        if not 0 <= x < self.size:
+            return False
+        if not 0 <= y < self.size:
+            return False
+        return True
+    def is_near(self,xy):
+        def empty_or_out_of_bounds(y,x):
+            xy = (x,y)
+            if not self.is_in_bounds(xy):
+                return True
+            if self.state[y,x] == self.EMPTY:
+                return True
+            return False
+
+
+        x,y = xy
+
+        if not (
+            empty_or_out_of_bounds(y+1,x) and
+            empty_or_out_of_bounds(y+1, x+1) and
+            empty_or_out_of_bounds(y+1, x-1) and
+            empty_or_out_of_bounds(y-1, x) and
+            empty_or_out_of_bounds(y-1, x+1) and
+            empty_or_out_of_bounds(y-1, x-1) and
+            empty_or_out_of_bounds(y, x+1) and
+            empty_or_out_of_bounds(y, x-1)
+        ):
+            return True
+
+        return False
     def insert_empty(self, xy):
         x, y = xy
         self.state[y, x] = self.EMPTY

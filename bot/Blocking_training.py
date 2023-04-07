@@ -9,11 +9,11 @@ def main():
     piskvorky = Piskvorky(VELIKOST)
     n_cnn_players = 10
     cnn_players = []
-    episodes = 1000
+    episodes = 100
     # waiting = list(range(n_cnn_players))
     teacher = LinesPlayer(piskvorky.size,"teacher")
-    player = CNNPLayer(VELIKOST, memory_size=500, name=str(184), preset=True,load=False, to_train=True, pretraining=True,
-                       block_training=teacher.reward, double_dqn=True, minimax_prob=0, random_move_prob=0.9999, random_move_decrease=0.99997)
+    player = CNNPLayer(VELIKOST, memory_size=500, name=str(185), preset=True,load=True, to_train=True, pretraining=True,
+                       block_training=teacher.reward, double_dqn=True, minimax_prob=0, random_move_prob=0.99, random_move_decrease=0.9997)
     counter = 0
     rewards_history = []
     for i in range(episodes):
@@ -49,7 +49,7 @@ def train_blocking(game: Piskvorky, player: CNNPLayer, teacher: LinesPlayer, ):
                 vysledek = game.end(move)
                 break
             turn, waiting = waiting, turn
-        player.train(vysledek, epochs=10, n_recalls=90)
+        player.train(vysledek, epochs=20, n_recalls=90)
         rewards += sum(player.curr_match_reward_log)
     player.save_model()
     return rewards

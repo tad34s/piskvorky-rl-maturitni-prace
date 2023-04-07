@@ -61,29 +61,31 @@ class CNNCache:
     def __len__(self):
         return len(self.states_log)
 
-    def compute_state_target_matrix(self, state:GameState):
+    def compute_state_target_matrix(self, state:GameState, model):
         # creates the target_matrix for the model to learn from
-        target_matrix = torch.full((self.game_size,self.game_size),torch.nan,dtype=torch.float32)
-
+        q_values, probs = model.probs(state.state)
+        mask = torch.ones(self.game_size**2)
         for index_next_state in state.next_states:
             next_state = self.states_log[state.depth+1][index_next_state]
-            index = (torch.eq(state.state[0,0],next_state.state[0,0])==False).nonzero()
-            target_matrix[index[0][0],index[0][1]] = next_state.value()
-            print(target_matrix)
+            index = (torch.eq(state.state[0,0].flatten(),next_state.state[0,0].flatten())==False).nonzero()
+            mask[index] = 100
+            q_values[index] = next_state.value()
+        return q_values, mask
 
-        return target_matrix.flatten()
-
-    def get_states_targets(self):
+    def get_states_targets(self,model):
         st = time.time()
         targets = []
+        masks = []
         all_game_states = [x for depth in self.states_log for x in depth]
         for state in all_game_states:
-            targets.append(self.compute_state_target_matrix(state))
+            target_matrix, mask = self.compute_state_target_matrix(state,model)
+            targets.append(target_matrix)
+            masks.append(mask)
         et = time.time()
         elapsed_time = et - st
         print('Get states: ', elapsed_time, 'seconds')
         states = [x.state for x in all_game_states]
-        return states, targets
+        return states, targets, masks
 
     def wipe(self):
         self.states_log = self.generate_empty_log()
@@ -92,9 +94,10 @@ class CNNCache:
 
 class StateTargetValuesDataset(Dataset):
 
-    def __init__(self, states, targets):
+    def __init__(self, states, targets,masks):
         self.states = states
         self.targets = targets
+        self.masks = masks
         if len(states) != len(targets):
             raise ValueError
 
@@ -102,20 +105,20 @@ class StateTargetValuesDataset(Dataset):
         return len(self.states)
 
     def __getitem__(self, index):
-        return self.states[index], self.targets[index]
+        return self.states[index], self.targets[index], self.masks[index]
 
 
 class CNNPlayer_proximal(Player):
 
     def __init__(self, size, name, preset=False, to_train=False, load=False, pretraining=False, double_dqn=False,
-                 random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
+                 random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2, restrict_movement= False):
         # self.last_seen = None
 
         super().__init__(name, to_train)
         self.side = None
         self.size = size
         self.name = "CNN proximal " + name + " " + str(size)
-
+        self.restrict_movement = restrict_movement
         self.EMPTY = 0
 
         # model things
@@ -182,31 +185,27 @@ class CNNPlayer_proximal(Player):
 
     def train(self, epochs):
 
-        X, y = self.cache.get_states_targets()
-        dataset = StateTargetValuesDataset(X, y)
+        X, y, masks = self.cache.get_states_targets(self.model)
+        dataset = StateTargetValuesDataset(X, y, masks)
         dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
         for epoch in range(epochs):
 
             for batch in dataloader:
                 # We run the training step with the recorded inputs and new Q value targets.
-                X, y = batch
+                X, y, masks = batch
                 X = X.view((-1, 2, 8, 8))
                 y_hat = self.model(X)
-                loss = my_loss(y_hat, y)
+                loss = self.loss_fn(y_hat, y,masks)
                 print("loss",loss)
+                print(y_hat,y)
                 # Backprop
                 self.optim.zero_grad()
                 loss.backward()
-                for param in self.model.parameters():
-                    print(param.grad)
-                    if param.grad is None:
-                        continue
-                    torch.nan_to_num_(param.grad)
                 self.optim.step()
-
         if self.to_train and not self.pretraining:
             self.random_move_prob *= self.random_move_decrease
+
         self.cache.wipe()
 
 
@@ -224,12 +223,17 @@ class CNNPlayer_proximal(Player):
 
         print("q_values\n",q_values)
         q_values = np.copy(q_values)
+        probs = np.copy(probs)
         for index, value in enumerate(q_values):
+
             if not game.is_legal(game.index_to_xy(index)):
-                probs[index] = -1
+                probs[index] = 0.0
+
             elif probs[index] < 0:
                 probs[index] = 0.0
 
+            if self.restrict_movement and not game.is_near(game.index_to_xy(index)):
+                probs[index] = 0.0
         rand_n = np.random.rand(1)
         if self.to_train and (rand_n < self.random_move_prob or self.pretraining):
             move = random.choice(list_of_possible_moves(game))
@@ -238,7 +242,7 @@ class CNNPlayer_proximal(Player):
                 move = self.minimax_move(game)
         else:
             print("real move")
-            move = np.argmax(probs.numpy())
+            move = np.argmax(probs)
             move = game.index_to_xy(move)
 
         game.move(move)
@@ -252,12 +256,13 @@ class CNNPlayer_proximal(Player):
     def save_model(self):
         torch.save(self.model.state_dict(), self.file)  # .replace(" ","-"))
 
+
+
 class CustomMSE(nn.Module):
     def __init__(self):
         super(CustomMSE, self).__init__()
 
-    def forward(self, output, target):
-        return torch.nanmean((output - target)**2)
-
-def my_loss(output, target):
-    return torch.nanmean((output - target)**2)
+    def forward(self, output, target, masks):
+        cost_tensor = (output - target) ** 2
+        cost_tensor = torch.multiply(cost_tensor,masks)
+        return torch.mean(cost_tensor)

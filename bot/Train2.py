@@ -15,7 +15,7 @@ def play_n_games(game:Piskvorky,CNN_player:players.CNNPlayer_proximal, opponent:
             who_won.append(waiting.name)
         else:
             who_won.append(0)
-        starter,waiting = waiting,starter
+        #starter,waiting = waiting,starter
     CNN_player.train(20)
     return who_won
 
@@ -40,10 +40,10 @@ def play_game(game: Piskvorky, player1:players.Player, player2:players.Player):
 
 if __name__ == "__main__":
     game = Piskvorky(VELIKOST)
-    cnn_player = players.CNNPlayer_proximal(size = VELIKOST, name = str(1),to_train = True,preset = True,minimax_prob=0.0,random_move_prob=0.9,random_move_decrease=0.96)
+    cnn_player = players.CNNPlayer_proximal(size = VELIKOST, name = str(1),to_train = True,preset = True,minimax_prob=0.0,random_move_prob=0,random_move_decrease=0)
     random_player = players.LinesPlayer(name="line",game_size=VELIKOST)
     results_log = []
-    steps = 150
+    steps = 100
     length = 150
     for step in range(steps):
         print(f"step: {step}")
