@@ -2,4 +2,4 @@ VELIKOST = 8
 
 EMPTY = 0
 X = 1
-O = 2
+O = -1
