@@ -4,6 +4,8 @@ from variables import VELIKOST
 from piskvorky import Piskvorky
 from bot.Players.CNNPlayer import CNNPLayer
 import os
+from bot.alpha_gomoku.Alpha_player import AplhaPlayer
+
 
 BLACK = (0, 0, 0)
 GRID_COLOR = (19, 20, 20)
@@ -29,7 +31,8 @@ def main():
     new_game=True
 
     turn_user = True
-    AI = CNNPLayer(VELIKOST,name="9",memory_size=0, load = "..\\bot\\NNs_preset\\CNN-184-8.nn",to_train = False, preset=True)
+    AI = AplhaPlayer(VELIKOST,"123",500,True,load="..\\bot\\alpha_gomoku\\NNs_preset\\123.nn",restrict_movement=True)
+
     #AI = MinimaxPlayer(3, name="nicitel")
    # AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
 

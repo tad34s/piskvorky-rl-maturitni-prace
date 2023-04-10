@@ -8,7 +8,7 @@ class RandomPlayer(Player):
         super().__init__(name = "Random " + name)
 
     def move(self,game,enemy_move) ->tuple:
-        move = random.choice(list_of_possible_moves(game))
+        move = random.choice(list_of_possible_moves(game.state))
         game.move(move)
         return move
 

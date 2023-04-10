@@ -210,7 +210,7 @@ class CNNPLayer():
 
         rand_n = np.random.rand(1)
         if self.to_train and (rand_n < self.random_move_prob or self.pretraining):
-            move = random.choice(list_of_possible_moves(game))
+            move = random.choice(list_of_possible_moves(game.state))
             rand_n2 = np.random.rand(1)
             if rand_n2 < self.minimax_prob and not self.pretraining:
                 move = self.minimax_move(game)

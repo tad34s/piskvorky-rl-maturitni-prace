@@ -143,7 +143,7 @@ def minimax(game, depth,heuristic):
     val, x, y = maxx(-200, 200, 0, depth)
 
     if val == 0:
-        return random.choice(list_of_possible_moves(game))
+        return random.choice(list_of_possible_moves(game.state))
 
     return x, y
 

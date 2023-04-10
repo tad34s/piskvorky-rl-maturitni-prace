@@ -1,8 +1,9 @@
-from piskvorky import Piskvorky
+from piskvorky import Piskvorky, play_game
 from variables import VELIKOST, X,O
 import Players as players
 from matplotlib.pyplot import plot,show
-def play_n_games(game:Piskvorky,CNN_player:players.CNNPlayer_proximal, opponent:players.Player, n:int):
+from alpha_gomoku.Alpha_player import AplhaPlayer
+def play_n_games(game:Piskvorky,CNN_player:players.Player, opponent:players.Player, n:int):
     starter = opponent
     waiting = CNN_player
     who_won = []
@@ -20,31 +21,15 @@ def play_n_games(game:Piskvorky,CNN_player:players.CNNPlayer_proximal, opponent:
     return who_won
 
 
-def play_game(game: Piskvorky, player1:players.Player, player2:players.Player):
-    game.reset()
-    player1.new_game(side=game.X, other=game.O)
-    player2.new_game(side=game.O, other=game.X)
-    turn = player1
-    waiting = player2
-    move = None
-    while True:
-        move = turn.move(game, move)
-        print(str(game))
-        if game.end(move):
-            result = game.end(move)
-            break
-        turn, waiting = waiting, turn
-    player1.game_end(result)
-    player2.game_end(result)
-    return result
+
 
 if __name__ == "__main__":
     game = Piskvorky(VELIKOST)
-    cnn_player = players.CNNPlayer_proximal(size = VELIKOST, name = str(1),to_train = True,preset = True,minimax_prob=0.0,random_move_prob=0,random_move_decrease=0)
+    cnn_player = AplhaPlayer(VELIKOST,"1",100,True,True,False,False)
     random_player = players.LinesPlayer(name="line",game_size=VELIKOST)
     results_log = []
     steps = 100
-    length = 150
+    length = 50
     for step in range(steps):
         print(f"step: {step}")
         who_won = play_n_games(game,cnn_player,random_player,length)

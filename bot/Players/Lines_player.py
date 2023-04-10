@@ -1,5 +1,4 @@
 import random
-from piskvorky import Piskvorky
 from copy import copy
 from bot.Players.Player_abstract_class import Player
 
@@ -17,7 +16,7 @@ class LinesPlayer(Player):
         self.line_list = self.generate_line_list()
         self.game_length = 0
 
-    def reward(self, game: Piskvorky, enemy_move: tuple):
+    def reward(self, game, enemy_move: tuple):
         reward_points = 0
         points = []
         for index, line in enumerate(self.line_list):
@@ -30,7 +29,7 @@ class LinesPlayer(Player):
         reward_points += self.game_length / 80
         return reward_points
 
-    def move(self, game: Piskvorky, enemy_move: tuple):
+    def move(self, game, enemy_move: tuple):
         moves = []
         max_points = -1
         for line, points in self.line_list:
