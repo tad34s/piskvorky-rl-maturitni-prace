@@ -9,6 +9,7 @@ from bot.Networks import CNNetwork_preset, CNNetwork_big
 from bot.Players.Player_abstract_class import Player
 import time
 from math import ceil
+from piskvorky.functions import mask_invalid_moves
 
 def heuristic(game, move):
     return 0
@@ -63,14 +64,15 @@ class CNNCache:
 
     def compute_state_target_matrix(self, state:GameState, model):
         # creates the target_matrix for the model to learn from
-        q_values, probs = model.probs(state.state)
+        #q_values, probs = model.probs(state.state)
+        matrix = torch.full([self.game_size**2],torch.nan)
         mask = torch.ones(self.game_size**2)
         for index_next_state in state.next_states:
             next_state = self.states_log[state.depth+1][index_next_state]
             index = (torch.eq(state.state[0,0].flatten(),next_state.state[0,0].flatten())==False).nonzero()
             mask[index] = 100
-            q_values[index] = next_state.value()
-        return q_values, mask
+            matrix[index] = next_state.value()
+        return matrix, mask
 
     def get_states_targets(self,model):
         st = time.time()
@@ -198,7 +200,6 @@ class CNNPlayer_proximal(Player):
                 y_hat = self.model(X)
                 loss = self.loss_fn(y_hat, y,masks)
                 print("loss",loss)
-                print(y_hat,y)
                 # Backprop
                 self.optim.zero_grad()
                 loss.backward()
@@ -224,16 +225,8 @@ class CNNPlayer_proximal(Player):
         print("q_values\n",q_values)
         q_values = np.copy(q_values)
         probs = np.copy(probs)
-        for index, value in enumerate(q_values):
-
-            if not game.is_legal(game.index_to_xy(index)):
-                probs[index] = 0.0
-
-            elif probs[index] < 0:
-                probs[index] = 0.0
-
-            if self.restrict_movement and not game.is_near(game.index_to_xy(index)):
-                probs[index] = 0.0
+        mask = mask_invalid_moves(game.state,self.restrict_movement)
+        probs *= mask
         rand_n = np.random.rand(1)
         if self.to_train and (rand_n < self.random_move_prob or self.pretraining):
             move = random.choice(list_of_possible_moves(game.state))
@@ -263,6 +256,11 @@ class CustomMSE(nn.Module):
         super(CustomMSE, self).__init__()
 
     def forward(self, output, target, masks):
+        indexes = torch.isfinite(target)
+
+        output = output[torch.isfinite(target)]
+        target = target[torch.isfinite(target)]
+
         cost_tensor = (output - target) ** 2
-        cost_tensor = torch.multiply(cost_tensor,masks)
+        #cost_tensor = torch.multiply(cost_tensor,masks)
         return torch.mean(cost_tensor)

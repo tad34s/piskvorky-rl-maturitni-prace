@@ -3,6 +3,7 @@ from variables import VELIKOST, X,O
 import Players as players
 from matplotlib.pyplot import plot,show
 from alpha_gomoku.Alpha_player import AplhaPlayer
+
 def play_n_games(game:Piskvorky,CNN_player:players.Player, opponent:players.Player, n:int):
     starter = opponent
     waiting = CNN_player
@@ -25,11 +26,11 @@ def play_n_games(game:Piskvorky,CNN_player:players.Player, opponent:players.Play
 
 if __name__ == "__main__":
     game = Piskvorky(VELIKOST)
-    cnn_player = AplhaPlayer(VELIKOST,"1",100,True,True,False,False)
+    cnn_player = players.CNNPlayer_proximal(VELIKOST,"181",preset = True,to_train = True,load=False,pretraining=False,double_dqn=False,restrict_movement=True)
     random_player = players.LinesPlayer(name="line",game_size=VELIKOST)
     results_log = []
-    steps = 100
-    length = 50
+    steps = 200
+    length = 100
     for step in range(steps):
         print(f"step: {step}")
         who_won = play_n_games(game,cnn_player,random_player,length)

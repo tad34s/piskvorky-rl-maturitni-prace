@@ -23,13 +23,13 @@ class CNNetwork_preset(torch.nn.Module):
         self.eval()
         with torch.no_grad():
             x = self.conv_5(x)
-        friendly,enemy = torch.split(x[0],4)
+        friendly, enemy = torch.split(x, 4,1)
         friendly = self.conv_friendly(friendly)
         friendly = self.conv_activation(friendly)
         enemy = self.conv_enemy(enemy)
         enemy = self.conv_activation(enemy)
-        x = torch.cat((friendly,enemy))
-        x = x.flatten()
+        x = torch.cat((friendly, enemy), dim=1)
+        x = x.flatten(start_dim = 1)
         x = self.activation(x)
         q_values = self.linear2(x)
         return q_values
@@ -38,7 +38,7 @@ class CNNetwork_preset(torch.nn.Module):
         self.eval()
         with torch.no_grad():
             q_values = self.forward(x)
-            return self.softmax(q_values), q_values
+            return self.softmax(q_values)[0], q_values[0]
 
     def create_weights(self,kernel_size):
         # creates 8 kernel weights first 4 is 2 diagonals, row and column the second 4 are exact same but checks the enemy
