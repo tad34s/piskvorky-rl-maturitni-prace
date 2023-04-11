@@ -1,10 +1,12 @@
 import pygame
 import sys
-from variables import VELIKOST
+import torch
+from variables import VELIKOST,X,O
 from piskvorky import Piskvorky
 from bot.Players.CNNPlayer import CNNPLayer
 import os
 from bot.alpha_gomoku.Alpha_player import AplhaPlayer
+from bot.alpha_gomoku.model import CNNetwork_preset
 
 
 BLACK = (0, 0, 0)
@@ -31,7 +33,9 @@ def main():
     new_game=True
 
     turn_user = True
-    AI = AplhaPlayer(VELIKOST,"123",500,True,load="..\\bot\\alpha_gomoku\\NNs_preset\\123.nn",restrict_movement=True)
+    model = CNNetwork_preset(VELIKOST)
+    model.load_state_dict(torch.load("..\\bot\\alpha_gomoku\\NNs_preset\\123.nn"))
+    AI = AplhaPlayer(VELIKOST,model,"123",500,True,restrict_movement=True)
 
     #AI = MinimaxPlayer(3, name="nicitel")
    # AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
@@ -56,9 +60,9 @@ def main():
                         new_game = True
                         continue
 
-            if vysledek==1:
+            if vysledek==X:
                 showMessage("Vyhrál jsi")
-            elif vysledek==2:
+            elif vysledek==O:
                 showMessage("Prohrál jsi")
             else:
                 showMessage("Remíza")
