@@ -6,11 +6,12 @@ from variables import EMPTY
 
 class MinimaxPlayer(Player):
 
-    def __init__(self, depth, name):
+    def __init__(self, depth, name,restricted_movement = False):
         super().__init__(name)
         self.depth = depth
         self.name = "Minim " + name
         self.to_train = False
+        self.restrict_movement = restricted_movement
         self.cache = {}
 
     def new_game(self, side, other):
@@ -37,13 +38,13 @@ def heuristic(game, move):
     return value
 
 
-def minimax(game, depth, heuristic):
+def minimax(game, depth, heuristic,restrict_movement):
     def maxx(alpha, beta, depth, maxdepth):
         maxv = -2000
         maxx = None
         maxy = None
 
-        for mov in list_of_possible_moves(game.state):
+        for mov in list_of_possible_moves(game.state,restrict_movement):
 
             game.move(mov)
 
@@ -90,7 +91,7 @@ def minimax(game, depth, heuristic):
         minx = None
         miny = None
 
-        for mov in list_of_possible_moves(game.state):
+        for mov in list_of_possible_moves(game.state,restrict_movement):
             game.move(mov)
 
             depth += 1
@@ -134,6 +135,6 @@ def minimax(game, depth, heuristic):
     val, x, y = maxx(-200, 200, 0, depth)
 
     if val == 0:
-        return random.choice(list_of_possible_moves(game.state))
+        return random.choice(list_of_possible_moves(game.state,restrict_movement))
 
     return x, y
