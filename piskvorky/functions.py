@@ -65,15 +65,10 @@ def mask_invalid_moves(state: np.ndarray, restrict_movements=False):
     return mask.flatten()
 
 
-def list_of_possible_moves(state):
-
-    # TODO optimalizovat
-    move_list = []
-
-    for y, i in enumerate(state):
-        for x, j in enumerate(i):
-            if j == EMPTY:
-                move_list.append((x, y))
+def list_of_possible_moves(state,restrict_movement = False):
+    mask = mask_invalid_moves(state,restrict_movement)
+    indices = np.nonzero(mask)
+    move_list = [index_to_xy(VELIKOST,x) for x in indices[0]]
 
     return move_list
 

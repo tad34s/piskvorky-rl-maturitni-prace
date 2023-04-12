@@ -46,7 +46,7 @@ class Piskvorky():
         index = self.size * y + x
         return index
 
-    def move(self, xy):
+    def move(self, xy:tuple):
         x, y = xy
         if not self.is_legal(xy):
             raise Exception("Illegal move")
@@ -55,7 +55,7 @@ class Piskvorky():
 
         self.switch_turn()
 
-    def is_legal(self, xy,state = False):
+    def is_legal(self, xy:tuple,state = False):
         x, y = xy
         if state is False:
             state = self.state
@@ -66,7 +66,7 @@ class Piskvorky():
             return False
 
         return True
-    def is_in_bounds(self,xy):
+    def is_in_bounds(self,xy:tuple):
         x, y = xy
 
         if not 0 <= x < self.size:
