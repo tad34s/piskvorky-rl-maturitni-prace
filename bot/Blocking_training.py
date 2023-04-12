@@ -1,8 +1,9 @@
-from bot.Players.CNNPlayer import CNNPLayer
+from bot.Players.CNNPlayer import CNNPlayer
 from variables import VELIKOST
 from piskvorky import Piskvorky
 from matplotlib.pyplot import plot,show
 from bot.Players.Lines_player import LinesPlayer
+from Networks import CNNetwork_big
 
 
 def main():
@@ -12,7 +13,8 @@ def main():
     episodes = 100
     # waiting = list(range(n_cnn_players))
     teacher = LinesPlayer(piskvorky.size,"teacher")
-    player = CNNPLayer(VELIKOST, memory_size=500, name=str(185), preset=True,load=True, to_train=True, pretraining=True,
+    model = CNNetwork_big(VELIKOST, str(185))
+    player = CNNPlayer(VELIKOST,model = model, memory_size=1000, name=str(185), to_train=True, pretraining=True,
                        block_training=teacher.reward, double_dqn=True, minimax_prob=0, random_move_prob=0.99, random_move_decrease=0.9997)
     counter = 0
     rewards_history = []
@@ -31,7 +33,7 @@ def main():
     show()
 
 
-def train_blocking(game: Piskvorky, player: CNNPLayer, teacher: LinesPlayer, ):
+def train_blocking(game: Piskvorky, player: CNNPlayer, teacher: LinesPlayer, ):
     n_games = 100
     rewards = 0
     for i in range(n_games):
@@ -49,9 +51,9 @@ def train_blocking(game: Piskvorky, player: CNNPLayer, teacher: LinesPlayer, ):
                 vysledek = game.end(move)
                 break
             turn, waiting = waiting, turn
-        player.train(vysledek, epochs=20, n_recalls=90)
+        player.train(vysledek, epochs=20, n_recalls=200)
         rewards += sum(player.curr_match_reward_log)
-    player.save_model()
+    player.model.save()
     return rewards
 
 

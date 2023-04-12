@@ -5,16 +5,29 @@ import torch.nn as nn
 
 class CNNetwork_preset(torch.nn.Module):
 
-    def __init__(self, size):
+    def __init__(self, size, name, load=False):
         self.size = size
         super(CNNetwork_preset, self).__init__()
-        self.conv_5 = nn.Conv2d(2,8,kernel_size=5, stride=1, padding=2)
+
+        self.build_graph()
+        self.name = name
+        self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
+
+        if load:
+            if isinstance(load, str):
+                self.load_state_dict(torch.load(load))
+            else:
+                self.load_state_dict(torch.load(self.file))
+            self.eval()
+
+    def build_graph(self):
+        self.conv_5 = nn.Conv2d(2, 8, kernel_size=5, stride=1, padding=2)
         self.conv_5.weight = torch.nn.Parameter(self.create_weights(5))
-        self.conv_5.bias = torch.nn.Parameter(torch.tensor([0,0,0,0,0,0,0,0],dtype=torch.float32))
-        self.conv_friendly = nn.Conv2d(4,1,kernel_size=3, stride=1, padding=1)
-        self.conv_enemy = nn.Conv2d(4,1,kernel_size=3, stride=1, padding=1)
-        self.linear1 = nn.Linear(512,256)
-        self.linear2 = nn.Linear(128,  self.size ** 2)
+        self.conv_5.bias = torch.nn.Parameter(torch.tensor([0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float32))
+        self.conv_friendly = nn.Conv2d(4, 1, kernel_size=3, stride=1, padding=1)
+        self.conv_enemy = nn.Conv2d(4, 1, kernel_size=3, stride=1, padding=1)
+        self.linear1 = nn.Linear(512, 256)
+        self.linear2 = nn.Linear(128, self.size ** 2)
         self.conv_activation = nn.ReLU()
         self.activation = nn.Tanh()
         self.softmax = nn.Softmax()
@@ -23,13 +36,13 @@ class CNNetwork_preset(torch.nn.Module):
         self.eval()
         with torch.no_grad():
             x = self.conv_5(x)
-        friendly, enemy = torch.split(x, 4,1)
+        friendly, enemy = torch.split(x, 4, 1)
         friendly = self.conv_friendly(friendly)
         friendly = self.conv_activation(friendly)
         enemy = self.conv_enemy(enemy)
         enemy = self.conv_activation(enemy)
         x = torch.cat((friendly, enemy), dim=1)
-        x = x.flatten(start_dim = 1)
+        x = x.flatten(start_dim=1)
         x = self.activation(x)
         q_values = self.linear2(x)
         return q_values
@@ -40,23 +53,45 @@ class CNNetwork_preset(torch.nn.Module):
             q_values = self.forward(x)
             return self.softmax(q_values)[0], q_values[0]
 
-    def create_weights(self,kernel_size):
+    def create_weights(self, kernel_size):
         # creates 8 kernel weights first 4 is 2 diagonals, row and column the second 4 are exact same but checks the enemy
-        if not 2<kernel_size<6:
+        if not 2 < kernel_size < 6:
             raise Exception
-        left_diagonal = [[[ 1 if x == y else 0 for x in range(kernel_size)] for y in range(kernel_size)],np.zeros((kernel_size,kernel_size))]
-        right_diagonal = [[[ 1 if x == y else 0 for x in range(kernel_size)] for y in reversed(range(kernel_size))],np.zeros((kernel_size,kernel_size))]
-        column =[ [[ 1 if y == 2 else 0 for x in range(kernel_size)] for y in reversed(range(kernel_size))],np.zeros((kernel_size,kernel_size))]
-        row = [[[ 1 if x == 2 else 0 for x in range(kernel_size)] for y in reversed(range(kernel_size))],np.zeros((kernel_size,kernel_size))]
+        left_diagonal = [[[1 if x == y else 0 for x in range(kernel_size)] for y in range(kernel_size)],
+                         np.zeros((kernel_size, kernel_size))]
+        right_diagonal = [[[1 if x == y else 0 for x in range(kernel_size)] for y in reversed(range(kernel_size))],
+                          np.zeros((kernel_size, kernel_size))]
+        column = [[[1 if y == 2 else 0 for x in range(kernel_size)] for y in reversed(range(kernel_size))],
+                  np.zeros((kernel_size, kernel_size))]
+        row = [[[1 if x == 2 else 0 for x in range(kernel_size)] for y in reversed(range(kernel_size))],
+               np.zeros((kernel_size, kernel_size))]
         friendly_kernels = [left_diagonal, right_diagonal, column, row]
-        enemy_kernels = [reversed(left_diagonal), reversed(right_diagonal), reversed(column),reversed(row)]
-        return torch.tensor([friendly_kernels,enemy_kernels],dtype=torch.float32).view([8, 2, 5, 5])
+        enemy_kernels = [reversed(left_diagonal), reversed(right_diagonal), reversed(column), reversed(row)]
+        return torch.tensor([friendly_kernels, enemy_kernels], dtype=torch.float32).view([8, 2, 5, 5])
+
+    def save(self):
+        torch.save(self.state_dict(), self.file)
+
 
 class CNNetwork_big(torch.nn.Module):
 
-    def __init__(self, size):
-        self.size = size
+    def __init__(self, size, name, load=False):
         super(CNNetwork_big, self).__init__()
+
+        self.size = size
+        self.build_graph()
+        self.name = name
+        self.file = "NNs\\" + self.name.replace(" ", "-") + ".nn"
+
+        if load:
+            if isinstance(load, str):
+                self.load_state_dict(torch.load(load))
+            else:
+                self.load_state_dict(torch.load(self.file))
+            self.eval()
+
+    def build_graph(self):
+
         self.block1 = nn.Sequential(nn.Conv2d(2, 128, kernel_size=3, stride=1, padding=1),
                                     nn.ReLU(),
                                     )
@@ -90,3 +125,6 @@ class CNNetwork_big(torch.nn.Module):
         with torch.no_grad():
             q_values = self.forward(x)
             return self.softmax(q_values)[0], q_values[0]
+
+    def save(self):
+        torch.save(self.state_dict(), self.file)

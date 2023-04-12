@@ -2,8 +2,8 @@ import torch.optim
 import numpy as np
 import torch
 from torch.utils.data import Dataset, DataLoader
-from bot.Players.Player_abstract_class import Player
-from bot.alpha_gomoku.model import CNNetwork_preset
+from bot.Player_abstract_class import Player
+from bot.alpha_gomoku.model import AlphaCNNetwork_preset
 from bot.alpha_gomoku.MCTS import MCTS
 from piskvorky import index_to_xy
 from copy import copy
@@ -57,10 +57,10 @@ class StateActionprobsRewardDataset(Dataset):
 
 class AplhaPlayer(Player):
 
-    def __init__(self,size,model,name,num_simulations,to_train=False,load=False, restrict_movement = False,):
+    def __init__(self,size,model,name,num_simulations,to_train=False, restrict_movement = False,):
         super().__init__(name, to_train)
         self.size = size
-        self.name = "CNN proximal " + name + " " + str(size)
+        self.name = "Alpha Zero " + name + " " + str(size)
         self.restrict_movement = restrict_movement
         self.num_simulations = num_simulations
         self.model = model
@@ -68,13 +68,6 @@ class AplhaPlayer(Player):
         self.optim = torch.optim.Adam(self.model.parameters(),lr=0.1)
         self.loss_actions = self.loss_pi
         self.loss_value = torch.nn.MSELoss()
-
-        if load:
-            if isinstance(load, str):
-                self.model.load_state_dict(torch.load(load))
-            else:
-                self.model.load_state_dict(torch.load(self.file))
-            self.model.eval()
 
         self.memory = AlphaMemory()
         self.current_match = []
@@ -141,9 +134,4 @@ class AplhaPlayer(Player):
 
         self.memory.wipe()
 
-    def save_model(self):
-        torch.save(self.model.state_dict(), self.file)
 
-    def loss_pi(self, outputs, targets):
-        loss = -(targets * torch.log(outputs)).sum(dim=1)
-        return loss.mean()

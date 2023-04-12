@@ -5,14 +5,13 @@ from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from bot.Players.Minimax_player import minimax, list_of_possible_moves
 from copy import deepcopy
-from bot.Networks import CNNetwork_preset, CNNetwork_big
-
+from bot.Player_abstract_class import  Player
 
 def heuristic(game, move):
     return 0
 
 
-class Match():
+class Match:
 
     def __init__(self, board_log, move_log, rewards_log, final_reward):
         # self.last_seen = None
@@ -54,7 +53,7 @@ class CNNMemory():
             self.add_match_to_list(self.games_drawn, match)
 
     def add_match_to_list(self, games: list, match: Match):
-        if len(games) >= self.size//3:
+        if len(games) >= self.size // 3:
             games.pop(0)
         games.append(match)
 
@@ -81,7 +80,7 @@ class CNNMemory():
 
 class StateTargetValuesDataset(Dataset):
 
-    def __init__(self, states, targets,moves):
+    def __init__(self, states, targets, moves):
         self.states = states
         self.targets = targets
         self.moves = moves
@@ -95,12 +94,13 @@ class StateTargetValuesDataset(Dataset):
         return self.states[index], self.targets[index], self.moves[index]
 
 
-class CNNPLayer():
+class CNNPlayer(Player):
 
-    def __init__(self, size, name, memory_size, preset=False, to_train=False, load=False, block_training=False,
-                 pretraining=False, restrict_movement= False, double_dqn=False,
+    def __init__(self, size, name, model, memory_size, to_train=False, block_training=False,
+                 pretraining=False, restrict_movement=False, double_dqn=False,
                  random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2):
         # self.last_seen = None
+        super().__init__(name, to_train)
         self.side = None
         self.size = size
         self.to_train = to_train
@@ -108,24 +108,11 @@ class CNNPLayer():
         self.block_training = block_training
         self.restrict_movement = restrict_movement
         # model things
-        if preset:
-            self.model = CNNetwork_preset(size=self.size)
-            self.file = ".\\NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
-        else:
-            self.model = CNNetwork_big(size=self.size)
-            self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
-
-        self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
-        self.loss_fn = CustomMSE()
-        if load:
-            if type(load) == type(""):
-                self.model.load_state_dict(torch.load(load))
-            else:
-                self.model.load_state_dict(torch.load(self.file))
-            self.model.eval()
-
+        self.model = model
         self.old_network = None
         self.double_dqn = double_dqn
+        self.loss_fn = CustomMSE()
+        self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
 
         # reinforcemnt learning params
         self.reward_discount = 0.99
@@ -305,34 +292,31 @@ class CNNPLayer():
             for move in match.move_log:
                 moves.append(move)
             # X = torch.cat([X, self.encode(board)])
-        dataset = StateTargetValuesDataset(X, y,moves)
+        dataset = StateTargetValuesDataset(X, y, moves)
         dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
         for epoch in range(epochs):
 
             for batch in dataloader:
                 # We run the training step with the recorded inputs and new Q value targets.
-                X, y,i = batch
+                X, y, i = batch
                 X = X.view((-1, 2, 8, 8))
                 y_hat = self.model(X)
                 # y = y.view(-1, 1)
 
-                loss = self.loss_fn(y_hat, y,i)
+                loss = self.loss_fn(y_hat, y, i)
 
                 # Backprop
                 self.optim.zero_grad()
                 loss.backward()
                 self.optim.step()
 
-    def save_model(self):
-        torch.save(self.model.state_dict(), self.file)  # .replace(" ","-"))
-
 
 class CustomMSE(nn.Module):
     def __init__(self):
         super(CustomMSE, self).__init__()
 
-    def forward(self, output, target,indexes):
-        cost_tensor = (output - target)**2
+    def forward(self, output, target, indexes):
+        cost_tensor = (output - target) ** 2
         bselect = torch.arange(cost_tensor.size(0), dtype=torch.long)
         cost_tensor[bselect, indexes[:]] *= 10
         return torch.mean(cost_tensor)

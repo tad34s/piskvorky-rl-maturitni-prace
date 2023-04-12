@@ -1,5 +1,5 @@
 from piskvorky import Piskvorky
-from model import CNNetwork_preset
+from model import AlphaCNNetwork_preset
 from trainer import Trainer
 from variables import VELIKOST
 

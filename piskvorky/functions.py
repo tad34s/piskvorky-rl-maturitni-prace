@@ -66,6 +66,8 @@ def mask_invalid_moves(state: np.ndarray, restrict_movements=False):
 
 
 def list_of_possible_moves(state):
+
+    # TODO optimalizovat
     move_list = []
 
     for y, i in enumerate(state):

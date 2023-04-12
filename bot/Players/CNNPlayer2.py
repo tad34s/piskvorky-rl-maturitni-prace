@@ -6,7 +6,7 @@ import numpy as np
 from bot.Players.Minimax_player import minimax, list_of_possible_moves
 from copy import copy,deepcopy
 from bot.Networks import CNNetwork_preset, CNNetwork_big
-from bot.Players.Player_abstract_class import Player
+from bot.Player_abstract_class import Player
 import time
 from math import ceil
 from piskvorky.functions import mask_invalid_moves
@@ -62,9 +62,8 @@ class CNNCache:
     def __len__(self):
         return len(self.states_log)
 
-    def compute_state_target_matrix(self, state:GameState, model):
+    def compute_state_target_matrix(self, state:GameState):
         # creates the target_matrix for the model to learn from
-        #q_values, probs = model.probs(state.state)
         matrix = torch.full([self.game_size**2],torch.nan)
         mask = torch.ones(self.game_size**2)
         for index_next_state in state.next_states:
@@ -74,13 +73,13 @@ class CNNCache:
             matrix[index] = next_state.value()
         return matrix, mask
 
-    def get_states_targets(self,model):
+    def get_states_targets(self):
         st = time.time()
         targets = []
         masks = []
         all_game_states = [x for depth in self.states_log for x in depth]
         for state in all_game_states:
-            target_matrix, mask = self.compute_state_target_matrix(state,model)
+            target_matrix, mask = self.compute_state_target_matrix(state)
             targets.append(target_matrix)
             masks.append(mask)
         et = time.time()
@@ -96,10 +95,9 @@ class CNNCache:
 
 class StateTargetValuesDataset(Dataset):
 
-    def __init__(self, states, targets,masks):
+    def __init__(self, states, targets):
         self.states = states
         self.targets = targets
-        self.masks = masks
         if len(states) != len(targets):
             raise ValueError
 
@@ -107,12 +105,12 @@ class StateTargetValuesDataset(Dataset):
         return len(self.states)
 
     def __getitem__(self, index):
-        return self.states[index], self.targets[index], self.masks[index]
+        return self.states[index], self.targets[index]
 
 
 class CNNPlayer_proximal(Player):
 
-    def __init__(self, size, name, preset=False, to_train=False, load=False, pretraining=False, double_dqn=False,
+    def __init__(self, size, name,model, to_train=False, pretraining=False, double_dqn=False,
                  random_move_prob=0.9999, random_move_decrease=0.9997, minimax_prob=0.2, restrict_movement= False):
         # self.last_seen = None
 
@@ -124,21 +122,9 @@ class CNNPlayer_proximal(Player):
         self.EMPTY = 0
 
         # model things
-        if preset:
-            self.model = CNNetwork_preset(size=self.size)
-            self.file = ".\\NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
-        else:
-            self.model = CNNetwork_big(size=self.size)
-            self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
-
+        self.model = model
         self.optim = torch.optim.RMSprop(self.model.parameters(), lr=0.00025)
         self.loss_fn = CustomMSE()
-        if load:
-            if isinstance(load, str):
-                self.model.load_state_dict(torch.load(load))
-            else:
-                self.model.load_state_dict(torch.load(self.file))
-            self.model.eval()
 
         self.old_network = None
         self.double_dqn = double_dqn
@@ -169,7 +155,7 @@ class CNNPlayer_proximal(Player):
         output = torch.tensor(nparray, dtype=torch.float32)
         return output
 
-    def new_game(self, side, other):
+    def new_game(self, side: int, other: int):
         print(self.random_move_prob)
         self.side = side
         self.wait = other
@@ -187,18 +173,18 @@ class CNNPlayer_proximal(Player):
 
     def train(self, epochs):
 
-        X, y, masks = self.cache.get_states_targets(self.model)
-        dataset = StateTargetValuesDataset(X, y, masks)
+        X, y = self.cache.get_states_targets()
+        dataset = StateTargetValuesDataset(X, y)
         dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
         for epoch in range(epochs):
 
             for batch in dataloader:
                 # We run the training step with the recorded inputs and new Q value targets.
-                X, y, masks = batch
+                X, y = batch
                 X = X.view((-1, 2, 8, 8))
                 y_hat = self.model(X)
-                loss = self.loss_fn(y_hat, y,masks)
+                loss = self.loss_fn(y_hat, y)
                 print("loss",loss)
                 # Backprop
                 self.optim.zero_grad()
@@ -255,7 +241,7 @@ class CustomMSE(nn.Module):
     def __init__(self):
         super(CustomMSE, self).__init__()
 
-    def forward(self, output, target, masks):
+    def forward(self, output, target):
         indexes = torch.isfinite(target)
 
         output = output[torch.isfinite(target)]

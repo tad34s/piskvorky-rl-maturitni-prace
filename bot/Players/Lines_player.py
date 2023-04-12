@@ -1,6 +1,6 @@
 import random
 from copy import copy
-from bot.Players.Player_abstract_class import Player
+from bot.Player_abstract_class import Player
 
 
 class LinesPlayer(Player):
@@ -24,7 +24,7 @@ class LinesPlayer(Player):
                 points.append(copy(line[1]))
                 self.line_list[index][1] = 0
         points.sort(reverse=True)
-        reward_points = sum([(x ** 2) / (30 * (i + 1))
+        reward_points = sum([(x ** 2) / (1 * (i + 1))
                              for i, x in enumerate(points)])
         reward_points += self.game_length / 80
         return reward_points

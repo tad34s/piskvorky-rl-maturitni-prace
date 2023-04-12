@@ -1,7 +1,8 @@
 import random
-from bot.Players.Player_abstract_class import Player
+from bot.Player_abstract_class import Player
 from piskvorky import list_of_possible_moves
 from variables import EMPTY
+
 
 class MinimaxPlayer(Player):
 
@@ -17,19 +18,8 @@ class MinimaxPlayer(Player):
         self.side = side
         self.other = other
 
-    def listofpossiblemoves(self, game):
-        movelist = []
-
-        for y, i in enumerate(game.state):
-            for x, j in enumerate(i):
-                if j == game.EMPTY:
-                    movelist.append((x, y))
-
-        return movelist
-
-
     def move(self, game, enemy_move):
-        xy = minimax(game,self.depth,heuristic)
+        xy = minimax(game, self.depth, heuristic)
 
         game.move(xy)
         return xy
@@ -41,13 +31,13 @@ def heuristic(game, move):
     leftdiag = game.left_diag_points(move[0], move[1])
     rightdiag = game.right_diag_points(move[0], move[1])
 
-    value = max((row,column,leftdiag,rightdiag))
+    value = max((row, column, leftdiag, rightdiag))
     value = value / 6
 
     return value
 
 
-def minimax(game, depth,heuristic):
+def minimax(game, depth, heuristic):
     def maxx(alpha, beta, depth, maxdepth):
         maxv = -2000
         maxx = None
@@ -111,7 +101,7 @@ def minimax(game, depth,heuristic):
                     value = heuristic(game, mov)
                     game.insert_empty(mov)
                     depth -= 1
-                    return value *(-1), mov[0], mov[1]
+                    return value * (-1), mov[0], mov[1]
 
             if game.end(mov) != "0" and game.end(mov):
                 game.insert_empty(mov)
@@ -147,5 +137,3 @@ def minimax(game, depth,heuristic):
         return random.choice(list_of_possible_moves(game.state))
 
     return x, y
-
-

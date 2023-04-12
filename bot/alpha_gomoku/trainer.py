@@ -6,7 +6,7 @@ from utils import reward_if_terminal,encode
 from variables import X,O
 from random import shuffle
 import os
-from bot.alpha_gomoku.model import CNNetwork_preset
+from bot.alpha_gomoku.model import AlphaCNNetwork_preset
 from bot.alpha_gomoku.Alpha_player import AplhaPlayer
 from copy import deepcopy
 class Trainer:
@@ -29,7 +29,7 @@ class Trainer:
                 self.model.load_state_dict(torch.load(self.file))
             self.model.eval()
         else:
-            self.model = CNNetwork_preset(game.size)
+            self.model = AlphaCNNetwork_preset(game.size)
         self.mcts = MCTS(self.game, self.model, num_simulations)
     def exceute_episode(self):
 

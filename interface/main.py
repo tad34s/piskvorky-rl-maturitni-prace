@@ -3,10 +3,10 @@ import sys
 import torch
 from variables import VELIKOST,X,O
 from piskvorky import Piskvorky
-from bot.Players.CNNPlayer import CNNPLayer
+from bot.Players.CNNPlayer import CNNPlayer
 import os
 from bot.alpha_gomoku.Alpha_player import AplhaPlayer
-from bot.alpha_gomoku.model import CNNetwork_preset
+from bot.alpha_gomoku.model import AlphaCNNetwork_preset
 
 
 BLACK = (0, 0, 0)
@@ -33,7 +33,7 @@ def main():
     new_game=True
 
     turn_user = True
-    model = CNNetwork_preset(VELIKOST)
+    model = AlphaCNNetwork_preset(VELIKOST)
     model.load_state_dict(torch.load("..\\bot\\alpha_gomoku\\NNs_preset\\123.nn"))
     AI = AplhaPlayer(VELIKOST,model,"123",500,True,restrict_movement=True)
 
