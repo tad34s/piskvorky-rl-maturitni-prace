@@ -7,7 +7,7 @@ class AlphaCNNetwork_preset(torch.nn.Module):
     def __init__(self, size, name, load):
         self.size = size
         super(AlphaCNNetwork_preset, self).__init__()
-
+        self.name = "Alpha Zero " + name + " " + str(size)
         self.build_graph()
         self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
 
@@ -25,8 +25,10 @@ class AlphaCNNetwork_preset(torch.nn.Module):
         self.conv_5.weight = torch.nn.Parameter(self.create_weights(5))
         self.conv_5.bias = torch.nn.Parameter(torch.tensor([0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float32))
 
-        self.conv_friendly = nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1)
-        self.conv_enemy = nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1)
+        self.conv_friendly = nn.Sequential(nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
+                                           self.conv_activation)
+        self.conv_enemy = nn.Sequential(nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
+                            self.conv_activation)
 
         self.conv_layer = nn.Sequential(nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1),
                                         self.conv_activation)
@@ -52,9 +54,7 @@ class AlphaCNNetwork_preset(torch.nn.Module):
 
         friendly, enemy = torch.split(x, 4, 1)
         friendly = self.conv_friendly(friendly)
-        friendly = self.conv_activation(friendly)
         enemy = self.conv_enemy(enemy)
-        enemy = self.conv_activation(enemy)
         x = torch.cat((friendly, enemy), dim=1)
 
         x = self.conv_layer(x)
@@ -63,11 +63,11 @@ class AlphaCNNetwork_preset(torch.nn.Module):
         value = self.value_head(x)
         value = value.view(-1, 1)
 
-        action_logits = self.action_head(x)
-        action_logits = action_logits.flatten(start_dim=1)
-        action_logits = self.action_activation(action_logits)
+        action_probs = self.action_head(x)
+        action_probs = action_probs.flatten(start_dim=1)
+        action_probs = self.action_activation(action_probs)
 
-        return action_logits, value
+        return action_probs, value
 
     def predict(self, x):
         self.eval()

@@ -22,13 +22,21 @@ class CNNetwork_preset(torch.nn.Module):
             self.eval()
 
     def build_graph(self):
+
         self.conv_5 = nn.Conv2d(2, 8, kernel_size=5, stride=1, padding=2)
         self.conv_5.weight = torch.nn.Parameter(self.create_weights(5))
         self.conv_5.bias = torch.nn.Parameter(torch.tensor([0, 0, 0, 0, 0, 0, 0, 0], dtype=torch.float32))
-        self.conv_friendly = nn.Conv2d(4, 1, kernel_size=3, stride=1, padding=1)
-        self.conv_enemy = nn.Conv2d(4, 1, kernel_size=3, stride=1, padding=1)
-        self.linear1 = nn.Linear(512, 256)
-        self.linear2 = nn.Linear(128, self.size ** 2)
+
+        self.conv_friendly = nn.Sequential(nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
+                                           self.conv_activation)
+        self.conv_enemy = nn.Sequential(nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
+                            self.conv_activation)
+
+        self.conv_layer = nn.Sequential(nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1),
+                                        self.conv_activation)
+        self.conv_layer2 = nn.Sequential(nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=1),
+                                         self.conv_activation)
+        self.linear = nn.Linear(8 * (self.size ** 2), self.size ** 2)
         self.conv_activation = nn.ReLU()
         self.activation = nn.Tanh()
         self.softmax = nn.Softmax()
@@ -37,15 +45,17 @@ class CNNetwork_preset(torch.nn.Module):
         self.eval()
         with torch.no_grad():
             x = self.conv_5(x)
+
         friendly, enemy = torch.split(x, 4, 1)
         friendly = self.conv_friendly(friendly)
-        friendly = self.conv_activation(friendly)
         enemy = self.conv_enemy(enemy)
-        enemy = self.conv_activation(enemy)
+
         x = torch.cat((friendly, enemy), dim=1)
+        x = self.conv_layer(x)
+        x = self.conv_layer2(x)
         x = x.flatten(start_dim=1)
         x = self.activation(x)
-        q_values = self.linear2(x)
+        q_values = self.linear(x)
         return q_values
 
     def probs(self, x):
@@ -103,9 +113,9 @@ class CNNetwork_big(torch.nn.Module):
                                     nn.ReLU(),
                                     )
 
-        self.linear1 = nn.Linear(4096, 1024)
-        self.linear2 = nn.Linear(1024, 512)
-        self.linear3 = nn.Linear(512, self.size ** 2)
+        self.linear1 = nn.Linear(64 * (self.size ** 2), 16 * (self.size ** 2))
+        self.linear2 = nn.Linear(16 * (self.size ** 2), 8 * (self.size ** 2))
+        self.linear3 = nn.Linear(8 * (self.size ** 2), self.size ** 2)
         self.activation = nn.Tanh()
         self.softmax = nn.Softmax(-1)
 
