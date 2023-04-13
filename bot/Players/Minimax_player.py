@@ -6,12 +6,12 @@ from variables import EMPTY
 
 class MinimaxPlayer(Player):
 
-    def __init__(self, depth, name,restricted_movement = False):
+    def __init__(self, depth, name,restrict_movement = False):
         super().__init__(name)
         self.depth = depth
         self.name = "Minim " + name
         self.to_train = False
-        self.restrict_movement = restricted_movement
+        self.restrict_movement = restrict_movement
         self.cache = {}
 
     def new_game(self, side, other):
@@ -20,7 +20,7 @@ class MinimaxPlayer(Player):
         self.other = other
 
     def move(self, game, enemy_move):
-        xy = minimax(game, self.depth, heuristic)
+        xy = minimax(game, self.depth, heuristic,self.restrict_movement)
 
         game.move(xy)
         return xy

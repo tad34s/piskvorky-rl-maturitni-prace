@@ -70,16 +70,13 @@ class CNNCache:
         return matrix, mask
 
     def get_states_targets(self):
-        st = time.time()
         targets = []
         all_game_states = [x for depth in self.states_log for x in depth]
         for state in all_game_states:
             target_matrix, mask = self.compute_state_target_matrix(state)
             targets.append(target_matrix)
 
-        et = time.time()
-        elapsed_time = et - st
-        print('Get states: ', elapsed_time, 'seconds')
+
         states = [x.state for x in all_game_states]
         return states, targets
 
@@ -151,7 +148,6 @@ class CNNPlayer_proximal(Player):
         return output
 
     def new_game(self, side: int, other: int):
-        print(self.random_move_prob)
         self.side = side
         self.wait = other
         self.match_state_log = []
@@ -227,8 +223,6 @@ class CNNPlayer_proximal(Player):
         move = minimax(game, 3, heuristic,restrict_movement=True)
         return move
 
-    def save_model(self):
-        torch.save(self.model.state_dict(), self.file)  # .replace(" ","-"))
 
 
 

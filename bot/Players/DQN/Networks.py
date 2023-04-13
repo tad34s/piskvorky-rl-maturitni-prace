@@ -10,7 +10,7 @@ class CNNetwork_preset(torch.nn.Module):
         super(CNNetwork_preset, self).__init__()
 
         self.build_graph()
-        self.name = "CNN proximal " + name + " " + str(size)
+        self.name = "CNN " + name + " " + str(size)
 
         self.file = "..\\NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
 
