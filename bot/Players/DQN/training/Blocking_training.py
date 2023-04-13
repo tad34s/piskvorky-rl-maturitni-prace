@@ -1,4 +1,4 @@
-from bot.Players.CNNPlayer import CNNPlayer
+from bot.Players.DQN.CNNPlayer import CNNPlayer
 from variables import VELIKOST
 from piskvorky import Piskvorky
 from matplotlib.pyplot import plot,show

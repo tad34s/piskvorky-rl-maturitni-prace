@@ -4,8 +4,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from bot.Players.Minimax_player import minimax, list_of_possible_moves
-from copy import copy,deepcopy
-from bot.Networks import CNNetwork_preset, CNNetwork_big
+from copy import deepcopy
 from bot.Player_abstract_class import Player
 import time
 from math import ceil
@@ -36,7 +35,6 @@ class CNNCache:
         return [ [] for x in range(ceil((self.game_size**2)/2))]
 
     def add_states(self, states: list, final_reward: float):
-        st = time.time()
         last_found_index = None
 
         for depth, new_state in enumerate(states):
@@ -56,9 +54,7 @@ class CNNCache:
                     self.states_log[depth-1][last_found_index].next_states.append(len(self.states_log[depth])-1)
                 last_found_index = len(self.states_log[depth])-1
 
-        et = time.time()
-        elapsed_time = et - st
-        print('Add_states: ', elapsed_time, 'seconds')
+
     def __len__(self):
         return len(self.states_log)
 
@@ -76,17 +72,16 @@ class CNNCache:
     def get_states_targets(self):
         st = time.time()
         targets = []
-        masks = []
         all_game_states = [x for depth in self.states_log for x in depth]
         for state in all_game_states:
             target_matrix, mask = self.compute_state_target_matrix(state)
             targets.append(target_matrix)
-            masks.append(mask)
+
         et = time.time()
         elapsed_time = et - st
         print('Get states: ', elapsed_time, 'seconds')
         states = [x.state for x in all_game_states]
-        return states, targets, masks
+        return states, targets
 
     def wipe(self):
         self.states_log = self.generate_empty_log()
@@ -208,7 +203,7 @@ class CNNPlayer_proximal(Player):
         else:
             probs, q_values = self.model.probs(input)
 
-        print("q_values\n",q_values)
+
         q_values = np.copy(q_values)
         probs = np.copy(probs)
         mask = mask_invalid_moves(game.state,self.restrict_movement)
@@ -229,7 +224,7 @@ class CNNPlayer_proximal(Player):
 
     def minimax_move(self, game):
         print("minimax move")
-        move = minimax(game, 3, heuristic)
+        move = minimax(game, 3, heuristic,restrict_movement=True)
         return move
 
     def save_model(self):
