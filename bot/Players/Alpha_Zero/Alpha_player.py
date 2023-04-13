@@ -11,6 +11,9 @@ import time
 
 class StateData():
 
+    """
+    State training data
+    """
     def __init__(self, state, action_probs):
         self.state = state
         self.action_probs = torch.tensor(action_probs / np.sum(action_probs), dtype=torch.float32)
@@ -19,17 +22,18 @@ class StateData():
 
 class AlphaMemory():
 
+    """ Memory to hold training data"""
     def __init__(self):
         self.states_log = []
 
-    def add_states(self, states: list):
+    def add_states(self, states: list)->None:
         for state in states:
             self.states_log.append(state)
 
-    def wipe(self):
+    def wipe(self)->None:
         self.states_log = []
 
-    def get_training_examples(self):
+    def get_training_examples(self)->tuple:
         states = []
         action_probs = []
         rewards = []
@@ -42,9 +46,8 @@ class AlphaMemory():
 
 
 class StateActionprobsRewardDataset(Dataset):
-    def __init__(self, states, action_probs, reward):
+    def __init__(self, states:list, action_probs:list, reward:list):
         self.states = states
-
         self.action_probs = action_probs
         self.reward = reward
         if len(states) != len(action_probs):
@@ -59,20 +62,26 @@ class StateActionprobsRewardDataset(Dataset):
 
 class AlphaPlayer(Player):
 
+    """
+    Player that implements Alpha Zero. Also has the option to train against an opponent.
+    It is important to note Alpha Zero should be trained by self-play. This is purely experimental.
+    """
     def __init__(self, size, model, name, num_simulations, to_train=False, restrict_movement=False, temperature=0):
         super().__init__(name, to_train)
         self.size = size
         self.name = "Alpha Zero " + name + " " + str(size)
         self.restrict_movement = restrict_movement
         self.num_simulations = num_simulations
-        self.model = model
 
+        # model things
+        self.model = model
         self.optim = torch.optim.Adam(self.model.parameters(), lr=0.1)
         self.loss_actions = self.loss_pi
         self.loss_value = torch.nn.MSELoss()
 
         self.memory = AlphaMemory()
         self.temperature = temperature
+        # states seen in the current match
         self.current_match = []
 
     def encode(self, state):
@@ -91,13 +100,15 @@ class AlphaPlayer(Player):
 
     def move(self, game, enemy_move) -> tuple:
         st = time.time()
+        # do MCTS
         mcts = MCTS(game, self.model, self.num_simulations, restrict_movement=self.restrict_movement)
         action_probs = [0 for _ in range(game.size ** 2)]
         root = mcts.run(self.model, game.state, turn=game.turn, waiting=game.waiting)
         for k, v in root.children.items():
             action_probs[k] = v.visit_count
-
+        # add example
         self.current_match.append(StateData(self.encode(game.state), action_probs))
+        # make the move
         action = root.select_action(temperature=self.temperature)
         move = index_to_xy(self.size, action)
         game.move(move)
@@ -114,11 +125,12 @@ class AlphaPlayer(Player):
         else:
             reward = 0
 
+        # add states to memory
         for state in self.current_match:
             state.final_reward = torch.tensor([reward], dtype=torch.float32)
         self.memory.add_states(copy(self.current_match))
 
-    def train(self, epochs):
+    def train(self, epochs:int):
 
         X, action_probs, rewards = self.memory.get_training_examples()
         dataset = StateActionprobsRewardDataset(X, action_probs, rewards)
@@ -138,7 +150,7 @@ class AlphaPlayer(Player):
 
         self.memory.wipe()
 
-    def loss_pi(self, targets, outputs):
+    def loss_pi(self, targets:torch.Tensor, outputs:torch.Tensor):
         fn = torch.nn.KLDivLoss(reduction="batchmean")
         loss = fn(outputs.log(), targets)
         return loss

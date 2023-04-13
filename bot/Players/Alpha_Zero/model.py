@@ -4,21 +4,29 @@ import torch.nn as nn
 
 
 class AlphaCNNetwork_preset(torch.nn.Module):
-    def __init__(self, size, name, load):
+
+    """
+    Special Neural Network for Alpha Zero, has two heads: value head and action head. Similarly to CNN_preset uses
+    preset kernel weights in the first convolutional layer.
+    """
+    def __init__(self, size:int, name:str, load=False):
         self.size = size
         super(AlphaCNNetwork_preset, self).__init__()
         self.name = "Alpha Zero " + name + " " + str(size)
         self.build_graph()
+        # default file
         self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
 
         if load:
             if isinstance(load, str):
+                # if specified location load the location
                 self.load_state_dict(torch.load(load))
             else:
+                # if simply True go for the default location
                 self.load_state_dict(torch.load(self.file))
             self.eval()
 
-    def build_graph(self):
+    def build_graph(self)->None:
         self.conv_activation = nn.ReLU()
 
         self.conv_5 = nn.Conv2d(2, 8, kernel_size=5, stride=1, padding=2)
@@ -75,8 +83,14 @@ class AlphaCNNetwork_preset(torch.nn.Module):
             probs, value = self.forward(x)
             return probs.numpy()[0], value.numpy()[0]
 
-    def create_weights(self, kernel_size):
-        # creates 8 kernel weights first 4 is 2 diagonals, row and column the second 4 are exact same but checks the enemy
+    def create_weights(self, kernel_size: int) -> torch.Tensor:
+        """
+        Creates weights to be preset for the first convolutional layer.
+        Generates 8 kernel weights first 4 is 2 diagonals, row and column the second 4 are exact same but checks the enemy.
+        :param kernel_size:
+        :return:
+        """
+        #
         if not 2 < kernel_size < 6:
             raise Exception
         left_diagonal = [[[1 if x == y else 0 for x in range(kernel_size)] for y in range(kernel_size)],

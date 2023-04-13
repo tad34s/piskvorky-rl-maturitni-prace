@@ -1,7 +1,7 @@
 from piskvorky import Piskvorky
 from model import AlphaCNNetwork_preset
 from trainer import Trainer
-from variables import VELIKOST
+from variables import GAME_SIZE
 from copy import deepcopy
 import concurrent.futures
 
@@ -33,7 +33,7 @@ def learn(trainer):
         trainer.model.save()
 
 if __name__ == '__main__':
-    game = Piskvorky(VELIKOST)
+    game = Piskvorky(GAME_SIZE)
     model = AlphaCNNetwork_preset(game.size, "123", load=False)
 
 

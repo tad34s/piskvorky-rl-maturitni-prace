@@ -11,13 +11,13 @@ class CNNetwork_preset(torch.nn.Module):
     with the symbols.
 
     """
-    def __init__(self, size, name, load=False):
+    def __init__(self, size, name:str, load=False):
         self.size = size
         super(CNNetwork_preset, self).__init__()
 
         self.build_graph()
         self.name = "CNN " + name + " " + str(size)
-
+        # default file
         self.file = "..\\NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
 
         if load:
@@ -77,13 +77,14 @@ class CNNetwork_preset(torch.nn.Module):
             q_values = self.forward(x)
             return self.softmax(q_values)[0], q_values[0]
 
-    def create_weights(self, kernel_size):
+    def create_weights(self, kernel_size:int)->torch.Tensor:
         """
-        Creates weights to be preset for the first convolutional layer
+        Creates weights to be preset for the first convolutional layer.
+        Generates 8 kernel weights first 4 is 2 diagonals, row and column the second 4 are exact same but checks the enemy.
         :param kernel_size:
         :return:
         """
-        # creates 8 kernel weights first 4 is 2 diagonals, row and column the second 4 are exact same but checks the enemy
+        #
         if not 2 < kernel_size < 6:
             raise Exception
         left_diagonal = [[[1 if x == y else 0 for x in range(kernel_size)] for y in range(kernel_size)],
@@ -105,13 +106,14 @@ class CNNetwork_preset(torch.nn.Module):
 class CNNetwork_big(torch.nn.Module):
 
     "Larger Neural Network with 3 convolutional layers and 3 linear layers"
-    def __init__(self, size, name, load=False):
+    def __init__(self, size:int, name:str, load=False):
 
         super(CNNetwork_big, self).__init__()
 
         self.size = size
         self.build_graph()
         self.name = "CNN big " + name + " " + str(size)
+        # default file
         self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         if load:

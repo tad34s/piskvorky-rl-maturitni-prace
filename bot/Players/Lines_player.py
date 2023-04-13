@@ -15,11 +15,11 @@ class LinesPlayer(Player):
         self.to_train = False
         self.game_length = 0
 
-    def new_game(self, side:int, other:int):
+    def new_game(self, side, other):
         self.line_list = self.generate_line_list()
         self.game_length = 0
 
-    def reward(self, game, enemy_move: tuple):
+    def reward(self, enemy_move: tuple):
         """
         Function that replaces the reward function in CNNPlayer when it is trying to train blocking.
         Calculates the reward, by the number of symbols it blocked
@@ -40,7 +40,7 @@ class LinesPlayer(Player):
         reward_points += self.game_length / 80
         return reward_points
 
-    def move(self, game: Piskvorky, enemy_move:tuple):
+    def move(self, game, enemy_move):
         """
         Goes through line_list and finds the line with the most symbols filled, then pics a random spot on that line.
         :param game:
@@ -81,7 +81,7 @@ class LinesPlayer(Player):
         game.move(output)
         return output
 
-    def generate_line_list(self):
+    def generate_line_list(self)->list:
         """
         Generates a list of all the possible lines. Each lines has two elements, a list of the spaces in the line and
         a number of symbols put in the line.

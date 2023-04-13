@@ -11,23 +11,23 @@ class CombPlayer(Player):
     """
     Player that combines the Minimax algorithm with DQN
     """
-    def __init__(self, depth:int, size:int, name:str, model, restrict_movement=False):
+    def __init__(self, depth:int, size:int, name:str, model, restrict_movement:bool=False):
         """
         :param depth: maximal depth
         :param size: game size
         :param name:
         :param model: model used to calculate state value
-        :param restrict_movement: search spaces near symbol
+        :param restrict_movement:  search only spaces near symbols
         """
+        super().__init__(name="Comb Player" + name)
         self.depth = depth
         self.size = size
         self.to_train = False
-        self.name = "Comb " + name
         self.model = model
         self.restrict_movement = restrict_movement
         self.move_count = 0
 
-    def new_game(self, side, other):
+    def new_game(self, side, other)->None:
         self.side = side
         self.wait = other
         self.move_count = 0

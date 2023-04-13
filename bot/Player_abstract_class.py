@@ -8,7 +8,6 @@ class Player(ABC):
         self.name = name
         self.to_train = to_train
 
-    @abstractmethod
     def new_game(self, side: int, other: int) -> None:
         """
 

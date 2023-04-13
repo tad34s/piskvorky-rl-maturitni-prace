@@ -11,23 +11,26 @@ import concurrent.futures
 
 class StateRewardProbsDataset(Dataset):
 
-    def __init__(self, states,values_target, probs_target):
+    def __init__(self, states:list,values_target:list, probs_target:list):
         self.states = states
         self.values_target = values_target
         self.probs_target = probs_target
         if len(states) != len(probs_target):
             raise ValueError
 
-    def __len__(self):
+    def __len__(self)->int:
         return len(self.states)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index:int):
         return self.states[index], self.values_target[index],self.probs_target[index]
 
 class Trainer:
-
-    def __init__(self, game,name,model, num_iters = 500,num_simulations = 500,num_epochs = 3,num_iters_per_example = 20, num_episodes = 50, restrict_movement = False):
+    """
+    Class used for training Alpha Zero model. Will only salf-play.
+    """
+    def __init__(self, game,name:str,model, num_iters:int = 500,num_simulations:int = 500,num_epochs:int = 3,num_iters_per_example:int = 20, num_episodes:int = 50, restrict_movement:bool = False):
         self.game = game
+
         self.num_simulations = num_simulations
         self.num_episodes = num_episodes
         self.num_iters = num_iters
@@ -37,11 +40,15 @@ class Trainer:
         self.model = model
         self.optim = torch.optim.Adam(self.model.parameters(), lr=0.001)
 
+        self.mcts = MCTS(self.game, self.model, num_simulations,restrict_movement)
         self.restrict_movement = restrict_movement
-        self.mcts = MCTS(self.game, self.model, num_simulations)
 
     def exceute_episode(self):
 
+        """
+        Play one game against itself.
+        :return:
+        """
         train_examples = []
         self.game.reset()
         n_moves = 1
@@ -74,13 +81,9 @@ class Trainer:
 
                 return ret
 
-
-
-    def train(self, examples):
-
+    def train(self, examples:list)->None:
         dataset = StateRewardProbsDataset(examples[0], examples[1], examples[2])
         dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
-
 
         for epoch in range(self.num_epochs):
 
@@ -96,19 +99,23 @@ class Trainer:
                 total_loss.backward()
                 self.optim.step()
 
-           # print(out_pi[0].detach())
-           # print(target_pis[0])
-
-    def loss_pi(self, outputs,targets):
+    def loss_pi(self, outputs:torch.Tensor,targets:torch.Tensor):
         fn  = torch.nn.KLDivLoss(reduction="batchmean")
         loss = fn(outputs.log(),targets)
         return loss
 
-    def loss_v(self,outputs,targets):
+    def loss_v(self,outputs:torch.Tensor,targets:torch.Tensor):
         loss = torch.sum((targets-outputs.view(-1))**2)/targets.size()[0]
         return loss
 
-    def model_eval(self,old_model,new_model,n_matches):
+    def model_eval(self,old_model,new_model,n_matches:int)->bool:
+        """
+        Test models against each other, to see if the new model is really better.
+        :param old_model:
+        :param new_model:
+        :param n_matches:
+        :return: True if new model better
+        """
         old_player = AlphaPlayer(self.game.size,old_model,"old",self.num_simulations,restrict_movement=True)
         new_player = AlphaPlayer(self.game.size,new_model,"new",self.num_simulations,restrict_movement=True)
 
@@ -117,7 +124,7 @@ class Trainer:
         who_won = []
         self.game.reset()
         for match in range(n_matches):
-            result = play_game(self.game, starter, waiting,visible=True)
+            result = play_game(self.game, starter, waiting)
             if result == X:
                 who_won.append(starter.name)
             elif result == O:
@@ -125,8 +132,8 @@ class Trainer:
             else:
                 who_won.append(0)
             starter,waiting = waiting,starter
-
+            # starter,waiting = waiting,starter
         print(who_won.count(new_player.name),who_won.count(old_player.name))
-        if who_won.count(new_player.name)>who_won.count(old_player.name):
+        if who_won.count(new_player.name)>=who_won.count(old_player.name):
             return True
 

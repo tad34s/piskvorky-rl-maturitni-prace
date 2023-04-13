@@ -1,6 +1,6 @@
 import random
 from bot.Player_abstract_class import Player
-from piskvorky import Piskvorky, list_of_possible_moves
+from piskvorky import Piskvorky, list_of_possible_moves,row_points,right_diag_points,left_diag_points,column_points
 from variables import EMPTY
 
 
@@ -17,9 +17,8 @@ class MinimaxPlayer(Player):
         :param restrict_movement: search only spaces near symbols
         """
 
-        super().__init__(name)
+        super().__init__("Minim " + name)
         self.depth = depth
-        self.name = "Minim " + name
         self.to_train = False
         self.restrict_movement = restrict_movement
 
@@ -35,10 +34,10 @@ class MinimaxPlayer(Player):
         :param move:
         :return:
         """
-        row = game.row_points(move[0], move[1])
-        column = game.column_points(move[0], move[1])
-        leftdiag = game.left_diag_points(move[0], move[1])
-        rightdiag = game.right_diag_points(move[0], move[1])
+        row = row_points(game.state,move)
+        column = column_points(game.state,move)
+        leftdiag = left_diag_points(game.state,move)
+        rightdiag = right_diag_points(game.state,move)
 
         value = max((row, column, leftdiag, rightdiag))
         value = value / 6
@@ -46,7 +45,7 @@ class MinimaxPlayer(Player):
         return value
 
 
-def minimax(game: Piskvorky, depth: int, heuristic, restrict_movement: bool):
+def minimax(game: Piskvorky, depth: int, heuristic, restrict_movement: bool)->tuple:
     """
     Minimax algorith, uses alpha-beta pruning
     :param game:
@@ -56,7 +55,7 @@ def minimax(game: Piskvorky, depth: int, heuristic, restrict_movement: bool):
     :return:
     """
 
-    def maxx(alpha: float, beta: float, depth: int, maxdepth: int):
+    def maxx(alpha: float, beta: float, depth: int, maxdepth: int)->tuple:
         """
         The maximazing decision maker
         :param alpha:
@@ -114,7 +113,7 @@ def minimax(game: Piskvorky, depth: int, heuristic, restrict_movement: bool):
             depth -= 1
         return maxv, maxx, maxy
 
-    def minn(alpha: float, beta: float, depth: int, maxdepth: int):
+    def minn(alpha: float, beta: float, depth: int, maxdepth: int)->tuple:
         """
         The minimizing decision maker
         :param alpha:
