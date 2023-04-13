@@ -43,8 +43,8 @@ def minimax(game, depth, heuristic,restrict_movement):
         maxv = -2000
         maxx = None
         maxy = None
-
-        for mov in list_of_possible_moves(game.state,restrict_movement):
+        list = list_of_possible_moves(game.state,restrict_movement)
+        for mov in list:
 
             game.move(mov)
 
@@ -73,8 +73,8 @@ def minimax(game, depth, heuristic,restrict_movement):
 
             if val > maxv:
                 maxv = val
-                maxx = x
-                maxy = y
+                maxx = mov[0]
+                maxy = mov[1]
 
             if maxv >= beta:
                 depth -= 1
@@ -118,8 +118,8 @@ def minimax(game, depth, heuristic,restrict_movement):
 
             if val < minv:
                 minv = val
-                minx = x
-                miny = y
+                minx = mov[0]
+                miny = mov[1]
 
             if minv <= alpha:
                 depth -= 1

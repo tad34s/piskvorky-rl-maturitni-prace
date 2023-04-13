@@ -12,7 +12,7 @@ class CNNetwork_preset(torch.nn.Module):
         self.build_graph()
         self.name = "CNN proximal " + name + " " + str(size)
 
-        self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
+        self.file = "..\\NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
 
         if load:
             if isinstance(load, str):
@@ -22,6 +22,9 @@ class CNNetwork_preset(torch.nn.Module):
             self.eval()
 
     def build_graph(self):
+        self.conv_activation = nn.ReLU()
+        self.activation = nn.Tanh()
+        self.softmax = nn.Softmax(-1)
 
         self.conv_5 = nn.Conv2d(2, 8, kernel_size=5, stride=1, padding=2)
         self.conv_5.weight = torch.nn.Parameter(self.create_weights(5))
@@ -37,9 +40,8 @@ class CNNetwork_preset(torch.nn.Module):
         self.conv_layer2 = nn.Sequential(nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=1),
                                          self.conv_activation)
         self.linear = nn.Linear(8 * (self.size ** 2), self.size ** 2)
-        self.conv_activation = nn.ReLU()
-        self.activation = nn.Tanh()
-        self.softmax = nn.Softmax()
+
+
 
     def forward(self, x):
         self.eval()
@@ -92,7 +94,7 @@ class CNNetwork_big(torch.nn.Module):
         self.size = size
         self.build_graph()
         self.name = "CNN big " + name + " " + str(size)
-        self.file = "NNs\\" + self.name.replace(" ", "-") + ".nn"
+        self.file = ".\\NNs\\" + self.name.replace(" ", "-") + ".nn"
 
         if load:
             if isinstance(load, str):

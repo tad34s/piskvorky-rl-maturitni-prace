@@ -4,33 +4,42 @@ from MCTS import MCTS
 from piskvorky import index_to_xy,play_game
 from utils import reward_if_terminal,encode
 from variables import X,O
-from random import shuffle
-import os
-from bot.alpha_gomoku.model import AlphaCNNetwork_preset
-from bot.alpha_gomoku.Alpha_player import AplhaPlayer
+from bot.Players.Alpha_Zero.Alpha_player import AlphaPlayer
 from copy import deepcopy
+from torch.utils.data import Dataset,DataLoader
+import concurrent.futures
+
+class StateRewardProbsDataset(Dataset):
+
+    def __init__(self, states,values_target, probs_target):
+        self.states = states
+        self.values_target = values_target
+        self.probs_target = probs_target
+        if len(states) != len(probs_target):
+            raise ValueError
+
+    def __len__(self):
+        return len(self.states)
+
+    def __getitem__(self, index):
+        return self.states[index], self.values_target[index],self.probs_target[index]
+
 class Trainer:
 
-    def __init__(self, game,name, num_iters = 500,num_simulations = 500,num_epochs = 3,num_iters_per_example = 20, num_episodes = 50, restrict_movement = False, load = False):
+    def __init__(self, game,name,model, num_iters = 500,num_simulations = 500,num_epochs = 3,num_iters_per_example = 20, num_episodes = 50, restrict_movement = False):
         self.game = game
-        self.name = name
         self.num_simulations = num_simulations
         self.num_episodes = num_episodes
         self.num_iters = num_iters
         self.num_epochs = num_epochs
         self.num_iters_per_example = num_iters_per_example
 
+        self.model = model
+        self.optim = torch.optim.Adam(self.model.parameters(), lr=0.001)
+
         self.restrict_movement = restrict_movement
-        self.file = "NNs_preset\\" + self.name.replace(" ", "-") + ".nn"
-        if load:
-            if isinstance(load, str):
-                self.model.load_state_dict(torch.load(load))
-            else:
-                self.model.load_state_dict(torch.load(self.file))
-            self.model.eval()
-        else:
-            self.model = AlphaCNNetwork_preset(game.size)
         self.mcts = MCTS(self.game, self.model, num_simulations)
+
     def exceute_episode(self):
 
         train_examples = []
@@ -74,76 +83,54 @@ class Trainer:
             old_model = deepcopy(self.model)
             for eps in range(self.num_episodes):
                 print(f"episode: {eps}")
+
                 iteration_train_examples = self.exceute_episode()
                 train_examples.extend(iteration_train_examples)
 
-            shuffle(train_examples)
+            train_examples = [list(x) for x in zip(*train_examples)]
+
             self.train(train_examples)
             is_better = self.model_eval(old_model,self.model,2)
             if not is_better:
                 print("not changing")
                 self.model = old_model
-            self.save_checkpoint(folder=".")
+            self.model.save()
 
     def train(self, examples):
-        optimizer = torch.optim.Adam(self.model.parameters(), lr=0.001)
-        pi_losses = []
-        v_losses = []
+
+        dataset = StateRewardProbsDataset(examples[0], examples[1], examples[2])
+        dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
+
 
         for epoch in range(self.num_epochs):
-            self.model.train()
 
-            batch_idx = 0
-
-            while batch_idx < int(len(examples) / 64):
-                sample_ids = np.random.randint(len(examples), size=256)
-                boards, pis, vs = list(zip(*[examples[i] for i in sample_ids]))
-                boards = torch.stack(boards).view(-1,2,8,8)
-                target_pis = torch.tensor(pis,dtype=torch.float32)
-                target_vs = torch.tensor(vs,dtype=torch.float64)
-
-
-                # compute output
-                out_pi, out_v = self.model(boards)
-                l_pi = self.loss_pi(target_pis, out_pi)
-                l_v = self.loss_v(target_vs, out_v)
-                total_loss = l_pi + l_v
-
-                pi_losses.append(float(l_pi))
-                v_losses.append(float(l_v))
-
-                optimizer.zero_grad()
+            for batch in dataloader:
+                X, y_action, y_value = batch
+                y_value = y_value.to(torch.float32)
+                X = X.view((-1, 2, 8, 8))
+                y_hat_actions, y_hat_value = self.model(X)
+                loss_actions = self.loss_pi(y_hat_actions, y_action)
+                loss_values = self.loss_v(y_hat_value, y_value)
+                total_loss = loss_actions + loss_values
+                self.optim.zero_grad()
                 total_loss.backward()
-                optimizer.step()
+                self.optim.step()
 
-                batch_idx += 1
-
-            print()
-            print("Policy Loss", np.mean(pi_losses))
-            print("Value Loss", np.mean(v_losses))
-            print("Examples:")
            # print(out_pi[0].detach())
            # print(target_pis[0])
 
-    def loss_pi(self, targets, outputs):
+    def loss_pi(self, outputs,targets):
         fn  = torch.nn.KLDivLoss(reduction="batchmean")
         loss = fn(outputs.log(),targets)
         return loss
 
-    def loss_v(self, targets, outputs):
+    def loss_v(self,outputs,targets):
         loss = torch.sum((targets-outputs.view(-1))**2)/targets.size()[0]
         return loss
 
-    def save_checkpoint(self,folder):
-        if not os.path.exists(folder):
-            os.mkdir(folder)
-
-        filepath = os.path.join(folder, self.file)
-        torch.save(self.model.state_dict(), filepath)
-
     def model_eval(self,old_model,new_model,n_matches):
-        old_player = AplhaPlayer(self.game.size,old_model,"old",self.num_simulations,)
-        new_player = AplhaPlayer(self.game.size,new_model,"new",self.num_simulations,)
+        old_player = AlphaPlayer(self.game.size,old_model,"old",self.num_simulations,restrict_movement=True)
+        new_player = AlphaPlayer(self.game.size,new_model,"new",self.num_simulations,restrict_movement=True)
 
         starter = old_player
         waiting = new_player
@@ -159,6 +146,7 @@ class Trainer:
                 who_won.append(0)
             starter,waiting = waiting,starter
             # starter,waiting = waiting,starter
+        print(who_won.count(new_player.name),who_won.count(old_player.name))
         if who_won.count(new_player.name)>=who_won.count(old_player.name):
             return True
 

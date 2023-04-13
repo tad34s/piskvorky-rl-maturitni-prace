@@ -3,7 +3,7 @@ import random
 from piskvorky import Piskvorky,play_game
 from bot.Players import CNNPlayer
 from variables import VELIKOST,X,O
-from bot.Networks import CNNetwork_preset,CNNetwork_big
+from bot.Players.DQN.Networks import CNNetwork_big
 
 
 def main():

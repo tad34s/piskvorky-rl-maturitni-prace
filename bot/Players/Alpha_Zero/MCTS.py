@@ -2,10 +2,9 @@ import numpy as np
 import math
 from copy import copy
 from variables import VELIKOST
-import piskvorky
 from piskvorky import index_to_xy, mask_invalid_moves
-from bot.alpha_gomoku.utils import reward_if_terminal,encode
-import time
+from bot.Players.Alpha_Zero.utils import reward_if_terminal,encode
+
 
 def ucb_score(parent, child):
     """
