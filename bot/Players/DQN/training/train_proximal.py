@@ -7,7 +7,9 @@ from bot.Players.DQN.Networks import CNNetwork_preset
 from copy import copy
 import random
 import concurrent.futures
-def play_game(game,player1,player2):
+
+
+def play_game(game, player1, player2):
     game.reset()
 
     states1 = []
@@ -35,31 +37,35 @@ def play_game(game,player1,player2):
         reward = -1
     else:
         reward = 0
-    return states1,states2,reward
-def get_list_of_matches(n_cnn_players,n_all_players,n_games):
-    # TODO dat napsat bez stejnech proti sobe
+    return states1, states2, reward
+
+
+def get_list_of_matches(n_cnn_players, n_all_players, n_games):
     list = []
-    players1 = random.choices(range(0, n_cnn_players),k = n_games)
+    players1 = random.choices(range(0, n_cnn_players), k=n_games)
     for index in players1:
         while True:
             index2 = random.choice(range(0, n_all_players))
             if index2 != index:
                 break
-        list.append((index,index2))
+        list.append((index, index2))
     return list
+
+
 def play_n_games(game: Piskvorky, CNN_players: list, opponents: list, n: int):
     all_players = CNN_players + opponents
-    list_of_matches = get_list_of_matches(len(CNN_players),len(all_players),n)
+    list_of_matches = get_list_of_matches(len(CNN_players), len(all_players), n)
     with concurrent.futures.ProcessPoolExecutor() as executor:
         if __name__ == "__main__":
             processes = []
             for match in list_of_matches:
                 print(f"match: {match}")
-                processes.append(executor.submit(play_game,copy(game),copy(all_players[match[0]]) , copy(all_players[match[1]])))
-            for e,process in enumerate(processes):
+                processes.append(
+                    executor.submit(play_game, copy(game), copy(all_players[match[0]]), copy(all_players[match[1]])))
+            for e, process in enumerate(processes):
                 states1, states2, reward = process.result()
                 if states1:
-                    CNN_players[list_of_matches[e][0]].cache.add_states(states1,reward)
+                    CNN_players[list_of_matches[e][0]].cache.add_states(states1, reward)
                 if states2:
                     CNN_players[list_of_matches[e][1]].cache.add_states(states2, reward * (-1))
 
@@ -74,17 +80,18 @@ if __name__ == "__main__":
     n_cnn_players = 10
     cnn_players = []
     for i in range(n_cnn_players):
-        model = CNNetwork_preset(game.size, str(i), load="..\\NNs_preset\\CNN-proximal-184-8.nn") # loaduju predtrenovanou, ktera umi trochu blokovat
-        cnn_player = player.CNNPlayer_proximal(VELIKOST,str(i),model, to_train=True, pretraining=False,
-                                        double_dqn=False, restrict_movement=True,random_move_decrease=0.997,minimax_prob=0.0)
+        model = CNNetwork_preset(game.size, str(i),
+                                 load="..\\NNs_preset\\CNN-proximal-184-8.nn")  # loaduju predtrenovanou, ktera umi trochu blokovat
+        cnn_player = player.CNNPlayer_proximal(VELIKOST, str(i), model, to_train=True, pretraining=False,
+                                               double_dqn=False, restrict_movement=True, random_move_decrease=0.997,
+                                               minimax_prob=0.0)
         cnn_players.append(cnn_player)
 
     opponents = [player.LinesPlayer(name="line", game_size=VELIKOST),
-                 player.MinimaxPlayer(depth=3,name = "minimax",restrict_movement=True),
+                 player.MinimaxPlayer(depth=3, name="minimax", restrict_movement=True),
                  player.RandomPlayer("1")]
     steps = 500
     length = 100
     for step in range(steps):
         print(f"step: {step}")
         play_n_games(game, cnn_players, opponents, length)
-
