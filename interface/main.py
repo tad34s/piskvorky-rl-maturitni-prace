@@ -3,10 +3,12 @@ import sys
 import torch
 from variables import VELIKOST,X,O
 from piskvorky import Piskvorky
-from bot.Players.CNNPlayer import CNNPlayer
 import os
-from bot.alpha_gomoku.Alpha_player import AplhaPlayer
-from bot.alpha_gomoku.model import AlphaCNNetwork_preset
+from bot.Players.DQN.Networks import CNNetwork_preset
+from bot.Players.Combination_player import CombPlayer
+from bot.Players.Alpha_Zero.Alpha_player import AlphaPlayer
+from bot.Players.Alpha_Zero.model import AlphaCNNetwork_preset
+from bot.Players.DQN.CNNPlayer2 import CNNPlayer_proximal
 
 
 BLACK = (0, 0, 0)
@@ -33,12 +35,13 @@ def main():
     new_game=True
 
     turn_user = True
-    model = AlphaCNNetwork_preset(VELIKOST)
-    model.load_state_dict(torch.load("..\\bot\\alpha_gomoku\\NNs_preset\\123.nn"))
-    AI = AplhaPlayer(VELIKOST,model,"123",500,True,restrict_movement=True)
+    model = AlphaCNNetwork_preset(VELIKOST,"123",load="../bot/Players/Alpha_Zero/NNs_preset/Alpha-Zero-123-8.nn")
+    AI = AlphaPlayer(VELIKOST,model,"123",500,True,restrict_movement=True)
 
     #AI = MinimaxPlayer(3, name="nicitel")
-   # AI = CombPlayer(depth=2,size=VELIKOST,name="skolovac",model="..\\bot\\CNN 10 8")
+    model = CNNetwork_preset(VELIKOST,"184","..\\bot\\Players\\DQN\\NNs_preset\\CNN-proximal-184-8.nn")
+    #AI = CNNPlayer_proximal(VELIKOST,"184",model,random_move_prob=0,restrict_movement=True)
+    #AI = CombPlayer(depth=3,size=VELIKOST,name="skolovac",model=model,restrict_movement=True)
 
     AI.new_game(side=game.O, other=game.X)
     vysledek = 0

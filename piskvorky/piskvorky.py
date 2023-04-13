@@ -1,7 +1,7 @@
 import numpy as np
 import time
 from variables import EMPTY, X, O
-from piskvorky.functions import left_diag_points,right_diag_points,column_points,row_points
+from piskvorky.functions import left_diag_points, right_diag_points, column_points, row_points
 
 
 class Piskvorky():
@@ -46,7 +46,7 @@ class Piskvorky():
         index = self.size * y + x
         return index
 
-    def move(self, xy:tuple):
+    def move(self, xy: tuple):
         x, y = xy
         if not self.is_legal(xy):
             raise Exception("Illegal move")
@@ -55,7 +55,7 @@ class Piskvorky():
 
         self.switch_turn()
 
-    def is_legal(self, xy:tuple,state = False):
+    def is_legal(self, xy: tuple, state=False):
         x, y = xy
         if state is False:
             state = self.state
@@ -66,7 +66,8 @@ class Piskvorky():
             return False
 
         return True
-    def is_in_bounds(self,xy:tuple):
+
+    def is_in_bounds(self, xy: tuple):
         x, y = xy
 
         if not 0 <= x < self.size:
@@ -82,20 +83,19 @@ class Piskvorky():
 
     def left_diag_points(self, x, y):
 
-        return left_diag_points(self.state, x,y)
+        return left_diag_points(self.state, x, y)
 
     def right_diag_points(self, x, y):
 
-
-        return right_diag_points(self.state,x,y)
+        return right_diag_points(self.state, x, y)
 
     def row_points(self, x, y):
 
-        return row_points(self.state,x,y)
+        return row_points(self.state, x, y)
 
     def column_points(self, x, y):
 
-        return column_points(self.state,x,y)
+        return column_points(self.state, x, y)
 
     def hash(self):
         res = 0
@@ -105,8 +105,6 @@ class Piskvorky():
                 res += space
 
         return res
-
-
 
     def end(self, xy):
         x, y = xy
@@ -122,5 +120,3 @@ class Piskvorky():
             return "0"
         else:
             return False
-
-

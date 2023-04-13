@@ -9,7 +9,7 @@ def index_to_xy(size, index):
     return x, y
 
 
-def play_game(game, player1, player2):
+def play_game(game, player1, player2,visible = False):
     game.reset()
     player1.new_game(side=game.X, other=game.O)
     player2.new_game(side=game.O, other=game.X)
@@ -18,7 +18,8 @@ def play_game(game, player1, player2):
     move = None
     while True:
         move = turn.move(game, move)
-        print(str(game))
+        if visible:
+            print(str(game))
         if game.end(move):
             result = game.end(move)
             break
