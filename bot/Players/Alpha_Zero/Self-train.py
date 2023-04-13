@@ -5,6 +5,7 @@ from variables import GAME_SIZE
 from copy import deepcopy
 import concurrent.futures
 
+
 def learn(trainer):
     for i in range(trainer.num_iters):
 
@@ -20,7 +21,6 @@ def learn(trainer):
                     print(f"episode: {eps}")
                     processes.append(executor.submit(trainer.exceute_episode))
                 for process in processes:
-
                     train_examples.extend(process.result())
 
         train_examples = [list(x) for x in zip(*train_examples)]
@@ -32,10 +32,10 @@ def learn(trainer):
             trainer.model = old_model
         trainer.model.save()
 
+
 if __name__ == '__main__':
     game = Piskvorky(GAME_SIZE)
     model = AlphaCNNetwork_preset(game.size, "123", load=False)
 
-
-    trainer = Trainer(game,"123", model,restrict_movement=True,num_episodes=10)
+    trainer = Trainer(game, "123", model, restrict_movement=True, num_episodes=10)
     learn(trainer)

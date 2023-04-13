@@ -124,7 +124,7 @@ class Trainer:
         who_won = []
         self.game.reset()
         for match in range(n_matches):
-            result = play_game(self.game, starter, waiting)
+            result = play_game(self.game, starter, waiting,visible=True)
             if result == X:
                 who_won.append(starter.name)
             elif result == O:
@@ -132,7 +132,6 @@ class Trainer:
             else:
                 who_won.append(0)
             starter,waiting = waiting,starter
-            # starter,waiting = waiting,starter
         print(who_won.count(new_player.name),who_won.count(old_player.name))
         if who_won.count(new_player.name)>=who_won.count(old_player.name):
             return True
