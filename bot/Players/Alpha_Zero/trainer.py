@@ -74,27 +74,7 @@ class Trainer:
 
                 return ret
 
-    def learn(self):
-        for i in range(self.num_iters):
 
-            print("{}/{}".format(i, self.num_iters))
-
-            train_examples = []
-            old_model = deepcopy(self.model)
-            for eps in range(self.num_episodes):
-                print(f"episode: {eps}")
-
-                iteration_train_examples = self.exceute_episode()
-                train_examples.extend(iteration_train_examples)
-
-            train_examples = [list(x) for x in zip(*train_examples)]
-
-            self.train(train_examples)
-            is_better = self.model_eval(old_model,self.model,2)
-            if not is_better:
-                print("not changing")
-                self.model = old_model
-            self.model.save()
 
     def train(self, examples):
 
@@ -137,7 +117,7 @@ class Trainer:
         who_won = []
         self.game.reset()
         for match in range(n_matches):
-            result = play_game(self.game, starter, waiting)
+            result = play_game(self.game, starter, waiting,visible=True)
             if result == X:
                 who_won.append(starter.name)
             elif result == O:
@@ -145,8 +125,8 @@ class Trainer:
             else:
                 who_won.append(0)
             starter,waiting = waiting,starter
-            # starter,waiting = waiting,starter
+
         print(who_won.count(new_player.name),who_won.count(old_player.name))
-        if who_won.count(new_player.name)>=who_won.count(old_player.name):
+        if who_won.count(new_player.name)>who_won.count(old_player.name):
             return True
 
