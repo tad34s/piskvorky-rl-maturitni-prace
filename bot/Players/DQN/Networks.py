@@ -33,15 +33,13 @@ class CNNetwork_preset(torch.nn.Module):
         self.conv_friendly = nn.Sequential(nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
                                            self.conv_activation)
         self.conv_enemy = nn.Sequential(nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
-                            self.conv_activation)
-
-        self.conv_layer = nn.Sequential(nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1),
                                         self.conv_activation)
-        self.conv_layer2 = nn.Sequential(nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=1),
+
+        self.conv_layer = nn.Sequential(nn.Conv2d(8, 32, kernel_size=3, stride=1, padding=1),
+                                        self.conv_activation)
+        self.conv_layer2 = nn.Sequential(nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1),
                                          self.conv_activation)
-        self.linear = nn.Linear(8 * (self.size ** 2), self.size ** 2)
-
-
+        self.linear = nn.Linear(16 * (self.size ** 2), self.size ** 2)
 
     def forward(self, x):
         self.eval()

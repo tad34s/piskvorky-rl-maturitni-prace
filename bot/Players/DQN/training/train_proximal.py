@@ -80,8 +80,7 @@ if __name__ == "__main__":
     n_cnn_players = 10
     cnn_players = []
     for i in range(n_cnn_players):
-        model = CNNetwork_preset(game.size, str(i),
-                                 load="..\\NNs_preset\\CNN-proximal-184-8.nn")  # loaduju predtrenovanou, ktera umi trochu blokovat
+        model = CNNetwork_preset(game.size, str(i))
         cnn_player = player.CNNPlayer_proximal(VELIKOST, str(i), model, to_train=True, pretraining=False,
                                                double_dqn=False, restrict_movement=True, random_move_decrease=0.997,
                                                minimax_prob=0.0)
