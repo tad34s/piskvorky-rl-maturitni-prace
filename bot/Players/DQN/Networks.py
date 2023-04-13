@@ -5,6 +5,12 @@ import torch.nn as nn
 
 class CNNetwork_preset(torch.nn.Module):
 
+    """
+
+    Neural Network with convolutional layers, the first layer has preset weights, to spot lines that could be made
+    with the symbols.
+
+    """
     def __init__(self, size, name, load=False):
         self.size = size
         super(CNNetwork_preset, self).__init__()
@@ -16,8 +22,10 @@ class CNNetwork_preset(torch.nn.Module):
 
         if load:
             if isinstance(load, str):
+                # if specified location load the location
                 self.load_state_dict(torch.load(load))
             else:
+                # if simply True go for the default location
                 self.load_state_dict(torch.load(self.file))
             self.eval()
 
@@ -35,11 +43,11 @@ class CNNetwork_preset(torch.nn.Module):
         self.conv_enemy = nn.Sequential(nn.Conv2d(4, 4, kernel_size=3, stride=1, padding=1),
                                         self.conv_activation)
 
-        self.conv_layer = nn.Sequential(nn.Conv2d(8, 32, kernel_size=3, stride=1, padding=1),
+        self.conv_layer = nn.Sequential(nn.Conv2d(8, 16, kernel_size=3, stride=1, padding=1),
                                         self.conv_activation)
-        self.conv_layer2 = nn.Sequential(nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1),
+        self.conv_layer2 = nn.Sequential(nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=1),
                                          self.conv_activation)
-        self.linear = nn.Linear(16 * (self.size ** 2), self.size ** 2)
+        self.linear = nn.Linear(8 * (self.size ** 2), self.size ** 2)
 
     def forward(self, x):
         self.eval()
@@ -59,12 +67,22 @@ class CNNetwork_preset(torch.nn.Module):
         return q_values
 
     def probs(self, x):
+        """
+        Makes a prediction without changing gradients
+        :param x:
+        :return:
+        """
         self.eval()
         with torch.no_grad():
             q_values = self.forward(x)
             return self.softmax(q_values)[0], q_values[0]
 
     def create_weights(self, kernel_size):
+        """
+        Creates weights to be preset for the first convolutional layer
+        :param kernel_size:
+        :return:
+        """
         # creates 8 kernel weights first 4 is 2 diagonals, row and column the second 4 are exact same but checks the enemy
         if not 2 < kernel_size < 6:
             raise Exception
@@ -86,7 +104,9 @@ class CNNetwork_preset(torch.nn.Module):
 
 class CNNetwork_big(torch.nn.Module):
 
+    "Larger Neural Network with 3 convolutional layers and 3 linear layers"
     def __init__(self, size, name, load=False):
+
         super(CNNetwork_big, self).__init__()
 
         self.size = size
@@ -96,8 +116,10 @@ class CNNetwork_big(torch.nn.Module):
 
         if load:
             if isinstance(load, str):
+                # if specified location load the location
                 self.load_state_dict(torch.load(load))
             else:
+                # if simply True go for the default location
                 self.load_state_dict(torch.load(self.file))
             self.eval()
 
@@ -138,4 +160,8 @@ class CNNetwork_big(torch.nn.Module):
             return self.softmax(q_values)[0], q_values[0]
 
     def save(self):
+        """
+        Save the model
+        :return:
+        """
         torch.save(self.state_dict(), self.file)

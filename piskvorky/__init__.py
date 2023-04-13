@@ -1,2 +1,2 @@
 from piskvorky.functions import *
-from piskvorky.piskvorky import Piskvorky
+from piskvorky.Piskvorky_class import Piskvorky

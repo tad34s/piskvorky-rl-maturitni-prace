@@ -8,8 +8,17 @@ from bot.Players.Minimax_player import minimax
 
 
 class CombPlayer(Player):
-
-    def __init__(self, depth, size, name, model, restrict_movement=False):
+    """
+    Player that combines the Minimax algorithm with DQN
+    """
+    def __init__(self, depth:int, size:int, name:str, model, restrict_movement=False):
+        """
+        :param depth: maximal depth
+        :param size: game size
+        :param name:
+        :param model: model used to calculate state value
+        :param restrict_movement: search spaces near symbol
+        """
         self.depth = depth
         self.size = size
         self.to_train = False
@@ -23,7 +32,12 @@ class CombPlayer(Player):
         self.wait = other
         self.move_count = 0
 
-    def encode(self, state):
+    def encode(self, state:np.ndarray)->torch.Tensor:
+        """
+        Encode state for the model
+        :param state:
+        :return:
+        """
         nparray = np.array([
             [(state == self.side).astype(int),
              (state == self.wait).astype(int)]
@@ -37,15 +51,16 @@ class CombPlayer(Player):
         self.move_count += 1
         return xy
 
-    def heuristic(self, game, move):
+    def heuristic(self, game, move)->float:
+        """
+        The heuristic is now replaced with model prediction
+        :param game:
+        :param move:
+        :return:
+        """
         q_values, probs = self.model.probs(self.encode(game.state))
         mask = mask_invalid_moves(game.state, self.restrict_movement)
         probs *= mask
-        index = np.argmax(probs)
-        return q_values[index].item()
+        index = np.argmax(probs) # index of the best move
+        return q_values[index].item() # value of the best move
 
-    def loadmodel(self, load):
-        model = CNNetwork_preset(size=self.size)
-        model.load_state_dict(torch.load(load))
-        model.eval()
-        return model

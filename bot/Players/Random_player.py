@@ -4,7 +4,9 @@ import random
 
 
 class RandomPlayer(Player):
-
+    """
+    Player that makes random moves
+    """
     def __init__(self, name: str):
         super().__init__(name="Random " + name)
 
@@ -13,6 +15,3 @@ class RandomPlayer(Player):
         game.move(move)
         return move
 
-    def new_game(self, side: int, other: int) -> None:
-        self.side = side
-        self.other = other
