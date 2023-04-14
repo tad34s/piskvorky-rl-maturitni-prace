@@ -20,4 +20,4 @@ There are also two networks implemented here:
 - CNNetwork_preset: Is smaller and has preset kernel weights (5x5) - mainly uses convolution, has better results
 - CNNetwork_big: Bigger has a lot of linear layers
 ### AlphaZero
-
+Implements the algorithm AlphaZero. Use the AlphaPlayer to play games.
