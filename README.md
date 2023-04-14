@@ -9,5 +9,9 @@ Tento projekt je maturitní práce pro Gymnázium nad Alejí ve školním roce 2
 The projects contains 3 packages: piskvorky, interface and bot. 
 - Package piskvorky is the game engine. It contains useful functions and the Pisvkorky class.
 - Interface uses PyGame to create an graphical interface for the game.
-- The bot package is further devided into individual players and 2 packages: AlphaZero and DQN. All the player classes use the abstract class Player.
-
+- The bot package contains the Players. All the player classes use the abstract class Player.
+### DQN
+This packages contains the CNNPlayers, training package and networks.
+We have two typec of CNNPlayer: CNNPlayer and CNNPlayer_proximal. The differrence is in the implementation of Q-Learing:
+- CNNPlayer: Is trained after every match it plays. Targets are computed by the Bellman equation. Memory stays after training.
+- CNNPlayer2: Is trained after N matches. Targets are computed by averaging the the reward the move led to. Memory is wiped after training.
