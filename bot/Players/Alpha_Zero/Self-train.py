@@ -6,13 +6,13 @@ from copy import deepcopy
 import concurrent.futures
 
 
-def learn(trainer):
-    for i in range(trainer.num_iters):
+def learn(trainer,num_iters):
+    for i in range(num_iters):
 
-        print("{}/{}".format(i, trainer.num_iters))
+        print("{}/{}".format(i, num_iters))
 
         train_examples = []
-        old_model = deepcopy(trainer.model)
+
         # get the training data paralely
         with concurrent.futures.ProcessPoolExecutor() as executor:
             if __name__ == "__main__":
@@ -24,19 +24,23 @@ def learn(trainer):
                     train_examples.extend(process.result())
 
         train_examples = [list(x) for x in zip(*train_examples)]
-        # train on the training data
-        trainer.train(train_examples)
-        is_better = trainer.model_eval(old_model, trainer.model, 2)
-        if not is_better:
+        # prepare new model
+        new_model = AlphaCNNetwork_preset(game.size, str(i), load=False)
+        new_model.load_state_dict(trainer.model.state_dict())
+        # train new model on the training data
+        trainer.train(train_examples,new_model)
+        new_model.save()
+        is_better = trainer.model_eval(trainer.model, new_model, 2)
+        if is_better:
+            trainer.model = new_model
+        else:
             print("not changing")
-            trainer.model = old_model
-        trainer.model.save()
 
 
 if __name__ == '__main__':
     # Train the Alpha Zero model, by self playing
     game = Piskvorky(GAME_SIZE)
-    model = AlphaCNNetwork_preset(game.size, "123", load=False)
+    model = AlphaCNNetwork_preset(game.size, "0", load=False)
 
-    trainer = Trainer(game, "123", model, restrict_movement=True, num_episodes=10)
-    learn(trainer)
+    trainer = Trainer(game, "trainer", model, restrict_movement=True, num_episodes=2)
+    learn(trainer,num_iters=200)

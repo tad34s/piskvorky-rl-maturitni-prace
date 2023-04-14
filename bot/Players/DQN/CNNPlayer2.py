@@ -144,7 +144,7 @@ class CNNPlayer_proximal(Player):
         """
         :param size: game size
         :param name:
-        :param model:
+        :param model: neural network
         :param to_train: whether we want to train it or not
         :param random_move_prob: chance to make a random move
         :param random_move_decrease: the amount it decreases after each training

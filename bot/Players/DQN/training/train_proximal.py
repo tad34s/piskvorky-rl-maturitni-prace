@@ -2,7 +2,7 @@ from piskvorky import Piskvorky
 from variables import GAME_SIZE, X, O
 from bot.Player_abstract_class import Player
 import bot.Players as player
-from matplotlib.pyplot import plot, show
+
 from bot.Players.DQN.Networks import CNNetwork_preset
 from copy import copy
 import random

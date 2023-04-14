@@ -114,7 +114,7 @@ class CNNPlayer(Player):
 
         :param size: game size
         :param name:
-        :param model:
+        :param model: neural network
         :param memory_size: the number of matches memory will remember
         :param to_train: whether we want to train it or not
         :param block_training: false or function that replaces the reward function

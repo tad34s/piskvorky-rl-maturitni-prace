@@ -66,7 +66,18 @@ class AlphaPlayer(Player):
     Player that implements Alpha Zero. Also has the option to train against an opponent.
     It is important to note Alpha Zero should be trained by self-play. This is purely experimental.
     """
-    def __init__(self, size, model, name, num_simulations, to_train=False, restrict_movement=False, temperature=0):
+    def __init__(self, size, name,model, num_simulations, to_train=False, restrict_movement=False, temperature=0):
+        """
+
+        :param size: game size
+        :param name:
+        :param model: neural network
+        :param num_simulations: how much should MCTS do
+        :param to_train: whether we want to train it or not
+        :param restrict_movement: search only spaces near symbols
+        :param temperature: how optimal should the move be
+        """
+
         super().__init__(name, to_train)
         self.size = size
         self.name = "Alpha Zero " + name + " " + str(size)

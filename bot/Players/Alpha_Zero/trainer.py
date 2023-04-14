@@ -81,7 +81,7 @@ class Trainer:
 
                 return ret
 
-    def train(self, examples:list)->None:
+    def train(self, examples:list,model)->None:
         dataset = StateRewardProbsDataset(examples[0], examples[1], examples[2])
         dataloader = DataLoader(dataset, batch_size=64, shuffle=True)
 
@@ -91,7 +91,7 @@ class Trainer:
                 X, y_action, y_value = batch
                 y_value = y_value.to(torch.float32)
                 X = X.view((-1, 2, 8, 8))
-                y_hat_actions, y_hat_value = self.model(X)
+                y_hat_actions, y_hat_value = model(X)
                 loss_actions = self.loss_pi(y_hat_actions, y_action)
                 loss_values = self.loss_v(y_hat_value, y_value)
                 total_loss = loss_actions + loss_values
@@ -116,8 +116,8 @@ class Trainer:
         :param n_matches:
         :return: True if new model better
         """
-        old_player = AlphaPlayer(self.game.size,old_model,"old",self.num_simulations,restrict_movement=True)
-        new_player = AlphaPlayer(self.game.size,new_model,"new",self.num_simulations,restrict_movement=True)
+        old_player = AlphaPlayer(self.game.size,"old",old_model,self.num_simulations,restrict_movement=True)
+        new_player = AlphaPlayer(self.game.size,"new",new_model,self.num_simulations,restrict_movement=True)
 
         starter = old_player
         waiting = new_player
