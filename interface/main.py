@@ -35,13 +35,8 @@ def main() -> None:
     new_game = True
     turn_user = True  # user starts
 
-    model = AlphaCNNetwork_preset(GAME_SIZE, "123", load="../bot/Players/Alpha_Zero/NNs_preset/Alpha-Zero-123-8.nn")
-    AI = AlphaPlayer(GAME_SIZE, model, "123", 500, True, restrict_movement=True)
-
-    # AI = MinimaxPlayer(3, name="nicitel")
-    # model = CNNetwork_preset(GAME_SIZE,"184","..\\bot\\Players\\DQN\\NNs_preset\\CNN-proximal-184-8.nn")
-    # AI = CNNPlayer_proximal(GAME_SIZE,"184",model,random_move_prob=0,restrict_movement=True)
-    # AI = CombPlayer(depth=3,size=GAME_SIZE,name="skolovac",model=model,restrict_movement=True)
+    model = AlphaCNNetwork_preset(GAME_SIZE, "123", load=False)
+    AI = AlphaPlayer(GAME_SIZE,"123" ,model , 500, True, restrict_movement=True)
 
     AI.new_game(side=game.O, other=game.X)
     vysledek = 0
@@ -70,7 +65,6 @@ def main() -> None:
             else:
                 showMessage("Remíza")
 
-            # text s výsledkem, čára přes vyhranou věc, nejde dál psát
         else:
 
             for event in pygame.event.get():
@@ -99,8 +93,7 @@ def main() -> None:
                         game_ended = True
                     turn_user = True
 
-            # nakreslit z boardu z game.board
-            # poslouchat event lick, získat pozici, konvertovat na move, ceknout jestli je legalni a je na rade jestli ano udelat ho
+
         pygame.display.update()
 
 
@@ -124,9 +117,13 @@ def drawBoard(game: Piskvorky) -> None:
     :return:
     """
     print(str(game))
-    block_size = int(WINDOW_WIDTH / GAME_SIZE)  # Set the size of the grid block
+    block_size = int((WINDOW_WIDTH / GAME_SIZE))  # Set the size of the grid block
     for ix, x in enumerate(range(0, WINDOW_WIDTH, block_size)):
+        if ix == game.state.shape[0]:
+            continue
         for iy, y in enumerate(range(0, WINDOW_HEIGHT, block_size)):
+            if iy == game.state.shape[0]:
+                continue
             if game.state[iy, ix] == game.X:
                 drawX(SCREEN, X_COLOR, (x + PADDING, y + PADDING), (x + block_size - PADDING, y + block_size - PADDING))
             elif game.state[iy, ix] == game.O:
