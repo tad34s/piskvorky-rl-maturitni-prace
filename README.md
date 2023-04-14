@@ -16,6 +16,7 @@ This packages contains the CNNPlayers, training package and networks.
 We have two typec of CNNPlayer: CNNPlayer and CNNPlayer_proximal. The differrence is in the implementation of Q-Learing:
 - CNNPlayer: Is trained after every match it plays. Targets are computed by the Bellman equation. Memory stays after training.
 - CNNPlayer_proximal: Is trained after N matches. Targets are computed by averaging the the reward the move led to. Memory is wiped after training.
+
 There are also two networks implemented here:
 - CNNetwork_preset: Is smaller and has preset kernel weights (5x5) - mainly uses convolution, has better results
 - CNNetwork_big: Bigger has a lot of linear layers
