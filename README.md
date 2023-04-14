@@ -1,5 +1,5 @@
 # piskvorky-rl-maturitni-prace
-Tento projekt je maturitní práce pro Gymnázium nad Alejí ve školním roce 2022/20223. Jejím účelem bylo vytvořit protivníka na základě umělé inteligence.
+Tento projekt je maturitní práce pro Gymnázium nad Alejí ve školním roce 2022/20223. Jejím účelem bylo vytvořit protivníkav piškvorkách na základě umělé inteligence.
 # Developer Docs
 ## How to install
 1. git clone the repository
