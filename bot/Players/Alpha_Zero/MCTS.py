@@ -7,6 +7,9 @@ from bot.Players.Alpha_Zero.utils import reward_if_terminal, encode
 
 
 class Node:
+    """
+    One node in the game tree. Taken from https://github.com/JoshVarty/AlphaZeroSimple.
+    """
     def __init__(self, prior, turn: int, waiting: int):
         self.visit_count = 0
         self.turn = turn
@@ -120,7 +123,7 @@ def ucb_score(parent: Node, child: Node) -> float:
 
 class MCTS:
     """
-    Monte Carlo Tree Search
+    Monte Carlo Tree Search. Taken from https://github.com/JoshVarty/AlphaZeroSimple
     """
     def __init__(self, game, model, num_simulations, restrict_movement=False):
         self.game = game

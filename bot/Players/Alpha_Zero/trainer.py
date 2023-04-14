@@ -26,7 +26,7 @@ class StateRewardProbsDataset(Dataset):
 
 class Trainer:
     """
-    Class used for training Alpha Zero model. Will only salf-play.
+    Class used for training Alpha Zero model. Will only salf-play. Taken from https://github.com/JoshVarty/AlphaZeroSimple.
     """
     def __init__(self, game,name:str,model, num_iters:int = 500,num_simulations:int = 500,num_epochs:int = 3,num_iters_per_example:int = 20, num_episodes:int = 50, restrict_movement:bool = False):
         self.game = game

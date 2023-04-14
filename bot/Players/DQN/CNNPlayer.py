@@ -104,7 +104,9 @@ class StateTargetValuesDataset(Dataset):
 
 
 class CNNPlayer(Player):
-
+    """
+    Deep Q leaning model. Inspired by https://github.com/wise-monk123/Reinforcement-Learning-Gomoku#readme.
+    """
     def __init__(self, size: int, name: str, model, memory_size: int, to_train: bool = False, block_training=False,
                  pretraining: bool = False, restrict_movement: bool = False, double_dqn: bool = False,
                  random_move_prob: float = 0.9999, random_move_decrease: float = 0.9997, minimax_prob: float = 0.2):

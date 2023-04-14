@@ -13,7 +13,7 @@ def learn(trainer):
 
         train_examples = []
         old_model = deepcopy(trainer.model)
-
+        # get the training data paralely
         with concurrent.futures.ProcessPoolExecutor() as executor:
             if __name__ == "__main__":
                 processes = []
@@ -24,7 +24,7 @@ def learn(trainer):
                     train_examples.extend(process.result())
 
         train_examples = [list(x) for x in zip(*train_examples)]
-
+        # train on the training data
         trainer.train(train_examples)
         is_better = trainer.model_eval(old_model, trainer.model, 2)
         if not is_better:
@@ -34,6 +34,7 @@ def learn(trainer):
 
 
 if __name__ == '__main__':
+    # Train the Alpha Zero model, by self playing
     game = Piskvorky(GAME_SIZE)
     model = AlphaCNNetwork_preset(game.size, "123", load=False)
 
