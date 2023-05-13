@@ -1,5 +1,5 @@
 # piskvorky-rl-maturitni-prace
-Tento projekt je maturitní práce pro Gymnázium nad Alejí ve školním roce 2022/20223. Jejím účelem bylo vytvořit protivníka v piškvorkách na základě umělé inteligence. Projekt má i grafické rozhraní.
+Tento projekt je maturitní práce pro Gymnázium nad Alejí ve školním roce 2022/2023. Jejím účelem bylo vytvořit protivníka v piškvorkách na základě umělé inteligence. Projekt má i grafické rozhraní.
 
 ![plot](https://github.com/tad34s/piskvorky-rl-maturitni-prace/blob/main/image.png?raw=true)
 
