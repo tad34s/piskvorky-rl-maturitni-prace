@@ -10,8 +10,8 @@ Tento projekt je maturitní práce pro Gymnázium nad Alejí ve školním roce 2
 3. To run the graphical interface, run main.py in the package interface.
 ## Architecture
 The project contains three packages: piskvorky, interface, and bot. 
-- Package Piskvorky is the game engine. It contains useful functions and the Pisvkorky class.
-- Interface uses PyGame to create a graphical interface for the game.
+- Package `piskvorky` is the game engine. It contains useful functions and the Pisvkorky class.
+- `interface` uses PyGame to create a graphical interface for the game.
 - The bot package contains the Players package. All the player classes use the abstract class Player.
   - All players have the following attributes: name, to_train, and methods: move, new_game, game_end
 
