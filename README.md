@@ -12,7 +12,7 @@ Tento projekt je maturitní práce pro Gymnázium nad Alejí ve školním roce 2
 The project contains three packages: piskvorky, interface, and bot. 
 - Package `piskvorky` is the game engine. It contains useful functions and the Pisvkorky class.
 - `interface` uses PyGame to create a graphical interface for the game.
-- The bot package contains the Players package. All the player classes use the abstract class Player.
+- The `bot` package contains the Players package. All the player classes use the abstract class Player.
   - All players have the following attributes: name, to_train, and methods: move, new_game, game_end
 
 Module varaibles.py has important global variables. GAME_SIZE can be changed, but networks trained on a different size will not work.
